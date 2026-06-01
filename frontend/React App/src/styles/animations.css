@@ -1,1 +1,185 @@
-.
+/* =========================
+   FLOATING ORB ANIMATIONS
+========================= */
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-15px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================
+   GLOW EFFECTS
+========================= */
+
+@keyframes glowBlue {
+  0% {
+    box-shadow:
+      0 0 10px #00e5ff,
+      0 0 20px #00e5ff;
+  }
+
+  50% {
+    box-shadow:
+      0 0 25px #00e5ff,
+      0 0 50px #00e5ff;
+  }
+
+  100% {
+    box-shadow:
+      0 0 10px #00e5ff,
+      0 0 20px #00e5ff;
+  }
+}
+
+@keyframes glowPurple {
+  0% {
+    box-shadow:
+      0 0 10px #7b2cff,
+      0 0 20px #7b2cff;
+  }
+
+  50% {
+    box-shadow:
+      0 0 25px #7b2cff,
+      0 0 50px #7b2cff;
+  }
+
+  100% {
+    box-shadow:
+      0 0 10px #7b2cff,
+      0 0 20px #7b2cff;
+  }
+}
+
+/* =========================
+   FADE ANIMATIONS
+========================= */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-25px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================
+   BUTTON EFFECTS
+========================= */
+
+@keyframes buttonPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* =========================
+   LOADER
+========================= */
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================
+   RAINBOW TEXT
+========================= */
+
+@keyframes rainbow {
+  0% {
+    background-position: 0%;
+  }
+
+  100% {
+    background-position: 300%;
+  }
+}
+
+/* =========================
+   CHAT MESSAGE APPEAR
+========================= */
+
+@keyframes messagePop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
