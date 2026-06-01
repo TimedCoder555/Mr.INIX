@@ -1,16 +1,15 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from ai.chatbot import ChatBot
 
 app = Flask(__name__)
 CORS(app)
 
+bot = ChatBot()
+
 @app.route("/")
 def home():
-    return {
-        "name": "Mr.INIX",
-        "status": "online",
-        "version": "1.0.0"
-    }
+    return {"status": "Mr.INIX AI Running 🚀"}
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -18,16 +17,11 @@ def chat():
 
     message = data.get("message", "")
 
-    reply = f"Mr.INIX received: {message}"
+    reply = bot.get_response(message)
 
     return jsonify({
-        "success": True,
         "reply": reply
     })
 
 if __name__ == "__main__":
-    app.run(
-        host="0.0.0.0",
-        port=5000,
-        debug=True
-    )
+    app.run(debug=True, port=5000)
