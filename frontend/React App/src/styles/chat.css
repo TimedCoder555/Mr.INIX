@@ -1,1 +1,201 @@
-.
+/* =========================
+   CHAT PAGE
+========================= */
+
+.chat-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* =========================
+   CHAT CONTAINER
+========================= */
+
+.chat-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* =========================
+   CHAT HEADER
+========================= */
+
+.chat-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.chat-header h1 {
+  color: #ffffff;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.chat-header p {
+  color: #a0a0a0;
+  margin-top: 8px;
+}
+
+/* =========================
+   CHAT MESSAGES
+========================= */
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+
+  min-height: 300px;
+
+  padding: 20px;
+  border-radius: 20px;
+
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(15px);
+
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* =========================
+   AI MESSAGE
+========================= */
+
+.ai-message {
+  align-self: flex-start;
+
+  max-width: 80%;
+
+  padding: 12px 16px;
+
+  border-radius: 18px;
+
+  color: white;
+
+  background: linear-gradient(
+    135deg,
+    #00e5ff,
+    #7b2cff
+  );
+
+  animation: messagePop 0.3s ease;
+}
+
+/* =========================
+   USER MESSAGE
+========================= */
+
+.user-message {
+  align-self: flex-end;
+
+  max-width: 80%;
+
+  padding: 12px 16px;
+
+  border-radius: 18px;
+
+  color: white;
+
+  background: #1f2937;
+
+  animation: messagePop 0.3s ease;
+}
+
+/* =========================
+   CHATBOX
+========================= */
+
+.chatbox-container {
+  margin-top: 20px;
+}
+
+.chatbox {
+  display: flex;
+  gap: 10px;
+}
+
+.chatbox input {
+  flex: 1;
+
+  padding: 14px 16px;
+
+  border: none;
+  outline: none;
+
+  border-radius: 16px;
+
+  color: white;
+
+  background: rgba(255,255,255,0.08);
+
+  backdrop-filter: blur(10px);
+}
+
+.chatbox input::placeholder {
+  color: #9ca3af;
+}
+
+.chatbox button {
+  border: none;
+
+  padding: 14px 22px;
+
+  border-radius: 16px;
+
+  cursor: pointer;
+
+  font-weight: 600;
+
+  color: white;
+
+  background: linear-gradient(
+    135deg,
+    #00e5ff,
+    #7b2cff
+  );
+
+  transition: 0.3s;
+}
+
+.chatbox button:hover {
+  transform: translateY(-2px);
+}
+
+/* =========================
+   VOICE BUTTON
+========================= */
+
+.chat-actions {
+  display: flex;
+  justify-content: center;
+
+  margin: 20px 0;
+}
+
+.voice-btn {
+  border: none;
+
+  padding: 12px 22px;
+
+  border-radius: 30px;
+
+  cursor: pointer;
+
+  color: white;
+
+  background: linear-gradient(
+    135deg,
+    #ff006e,
+    #8338ec
+  );
+
+  transition: 0.3s;
+}
+
+.voice-btn:hover {
+  transform: scale(1.05);
+}
+
+.voice-btn.active {
+  animation: pulse 1s infinite;
+}
