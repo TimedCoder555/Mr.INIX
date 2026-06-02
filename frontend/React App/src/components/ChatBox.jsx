@@ -1,37 +1,41 @@
 import React, { useState } from "react";
+import { sendMessage } from "../utils/api";
 
 function ChatBox() {
+
   const [message, setMessage] = useState("");
 
-  const handleSend = () => {
-    if (!message.trim()) return;
+  const [reply, setReply] = useState("");
 
-    console.log("User:", message);
+  const handleSend = async () => {
 
-    setMessage("");
+    if (!message) return;
+
+    const aiReply = await sendMessage(message);
+
+    setReply(aiReply);
   };
 
   return (
-    <div className="chatbox-container">
-      <div className="chatbox">
+    <div>
 
-        <input
-          type="text"
-          placeholder="Ask Mr.INIX anything..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleSend();
-            }
-          }}
-        />
+      <input
+        type="text"
+        placeholder="Ask Mr.INIX..."
+        value={message}
+        onChange={(e) =>
+          setMessage(e.target.value)
+        }
+      />
 
-        <button onClick={handleSend}>
-          Send
-        </button>
+      <button onClick={handleSend}>
+        Send
+      </button>
 
-      </div>
+      <p>
+        <strong>Mr.INIX:</strong> {reply}
+      </p>
+
     </div>
   );
 }
