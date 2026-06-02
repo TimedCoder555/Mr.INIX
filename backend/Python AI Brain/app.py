@@ -1,27 +1,53 @@
-from flask import Flask, request, jsonify
+from flask import Flask
 from flask_cors import CORS
-from ai.chatbot import ChatBot
 
-app = Flask(__name__)
+from routes.chat import chat_bp
+from routes.image import image_bp
+from routes.voice import voice_bp
+from routes.translate import translate_bp
+
+app = Flask(name)
+
 CORS(app)
 
-bot = ChatBot()
+=========================
+
+HOME ROUTE
+
+=========================
 
 @app.route("/")
 def home():
-    return {"status": "Mr.INIX AI Running 🚀"}
+return {
+"name": "Mr.INIX",
+"status": "online",
+"version": "1.0.0"
+}
 
-@app.route("/chat", methods=["POST"])
-def chat():
-    data = request.get_json()
+=========================
 
-    message = data.get("message", "")
+REGISTER ROUTES
 
-    reply = bot.get_response(message)
+=========================
 
-    return jsonify({
-        "reply": reply
-    })
+app.register_blueprint(chat_bp)
 
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+app.register_blueprint(image_bp)
+
+app.register_blueprint(voice_bp)
+
+app.register_blueprint(translate_bp)
+
+=========================
+
+START SERVER
+
+=========================
+
+if name == "main":
+
+app.run(
+    host="0.0.0.0",
+    port=5000,
+    debug=True
+)
