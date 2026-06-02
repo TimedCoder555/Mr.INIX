@@ -1,33 +1,25 @@
-const API_BASE_URL = "https://api.openai.com/v1";
+const API_URL = "http://127.0.0.1:5000/chat";
 
 export async function sendMessage(message) {
   try {
-    const response = await fetch(`${API_BASE_URL}/chat/completions`, {
+    const response = await fetch(API_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer YOUR_API_KEY`
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "user",
-            content: message
-          }
-        ]
+        message: message
       })
     });
 
     const data = await response.json();
 
-    return data;
-  } catch (error) {
-    console.error("API Error:", error);
+    return data.reply;
 
-    return {
-      error: true,
-      message: "Failed to connect."
-    };
+  } catch (error) {
+
+    console.error(error);
+
+    return "Mr.INIX server is offline.";
   }
-} 
+}
