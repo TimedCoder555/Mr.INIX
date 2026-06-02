@@ -10,11 +10,11 @@ app = Flask(name)
 
 CORS(app)
 
-=========================
+# =========================
 
-HOME ROUTE
+# HOME ROUTE
 
-=========================
+# =========================
 
 @app.route("/")
 def home():
@@ -24,11 +24,11 @@ return {
 "version": "1.0.0"
 }
 
-=========================
+# =========================
 
-REGISTER ROUTES
+# REGISTER ROUTES
 
-=========================
+# =========================
 
 app.register_blueprint(chat_bp)
 
@@ -38,11 +38,11 @@ app.register_blueprint(voice_bp)
 
 app.register_blueprint(translate_bp)
 
-=========================
+# =========================
 
-START SERVER
+# START SERVER
 
-=========================
+# =========================
 
 if name == "main":
 
