@@ -1,8 +1,6 @@
-const API_URL = "http://127.0.0.1:5000/chat";
-
 export async function sendMessage(message) {
   try {
-    const response = await fetch(API_URL, {
+    const res = await fetch("http://127.0.0.1:5000/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -12,14 +10,12 @@ export async function sendMessage(message) {
       })
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
     return data.reply;
 
   } catch (error) {
-
-    console.error(error);
-
-    return "Mr.INIX server is offline.";
+    console.log("API ERROR:", error);
+    return "Backend not connected 😢";
   }
 }
