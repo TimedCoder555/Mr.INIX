@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { sendMessage } from "./utils/api";
+import { sendMessage } from "../utils/api";
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([
