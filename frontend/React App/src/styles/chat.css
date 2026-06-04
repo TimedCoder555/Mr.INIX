@@ -1,201 +1,431 @@
-/* =========================
-   CHAT PAGE
-========================= */
+/* ============================================================
+   chat.css  —  Mr.INIX Chat Page Styles
+   Layout, message feed, input bar, timestamps, avatars.
+   Works together with glass.css for frosted bubble effects.
+   ============================================================ */
+
+
+/* ══════════════════════════════════════════════════════════
+   1. CHAT PAGE WRAPPER
+   ══════════════════════════════════════════════════════════ */
 
 .chat-page {
-  width: 100%;
-  min-height: 100vh;
-  padding: 20px;
+  display:        flex;
+  flex-direction: column;
+  height:         100%;
+  width:          100%;
+  position:       relative;
+  overflow:       hidden;
 }
 
-/* =========================
-   CHAT CONTAINER
-========================= */
 
-.chat-container {
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-/* =========================
-   CHAT HEADER
-========================= */
+/* ══════════════════════════════════════════════════════════
+   2. CHAT HEADER BAR
+      Shows AI name + status while in conversation
+   ══════════════════════════════════════════════════════════ */
 
 .chat-header {
-  text-align: center;
-  margin-bottom: 25px;
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         12px var(--space-md);
+  flex-shrink:     0;
+  z-index:         var(--z-nav);
+  animation:       slideDown 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.chat-header h1 {
-  color: #ffffff;
-  font-size: 32px;
-  font-weight: 700;
+.chat-header-info {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
 }
 
-.chat-header p {
-  color: #a0a0a0;
-  margin-top: 8px;
-}
-
-/* =========================
-   CHAT MESSAGES
-========================= */
-
-.chat-messages {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-
-  min-height: 300px;
-
-  padding: 20px;
-  border-radius: 20px;
-
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(15px);
-
-  border: 1px solid rgba(255,255,255,0.1);
-}
-
-/* =========================
-   AI MESSAGE
-========================= */
-
-.ai-message {
-  align-self: flex-start;
-
-  max-width: 80%;
-
-  padding: 12px 16px;
-
-  border-radius: 18px;
-
-  color: white;
-
-  background: linear-gradient(
-    135deg,
-    #00e5ff,
-    #7b2cff
-  );
-
-  animation: messagePop 0.3s ease;
-}
-
-/* =========================
-   USER MESSAGE
-========================= */
-
-.user-message {
-  align-self: flex-end;
-
-  max-width: 80%;
-
-  padding: 12px 16px;
-
-  border-radius: 18px;
-
-  color: white;
-
-  background: #1f2937;
-
-  animation: messagePop 0.3s ease;
-}
-
-/* =========================
-   CHATBOX
-========================= */
-
-.chatbox-container {
-  margin-top: 20px;
-}
-
-.chatbox {
-  display: flex;
-  gap: 10px;
-}
-
-.chatbox input {
-  flex: 1;
-
-  padding: 14px 16px;
-
-  border: none;
-  outline: none;
-
-  border-radius: 16px;
-
-  color: white;
-
-  background: rgba(255,255,255,0.08);
-
-  backdrop-filter: blur(10px);
-}
-
-.chatbox input::placeholder {
-  color: #9ca3af;
-}
-
-.chatbox button {
-  border: none;
-
-  padding: 14px 22px;
-
-  border-radius: 16px;
-
-  cursor: pointer;
-
-  font-weight: 600;
-
-  color: white;
-
-  background: linear-gradient(
-    135deg,
-    #00e5ff,
-    #7b2cff
-  );
-
-  transition: 0.3s;
-}
-
-.chatbox button:hover {
-  transform: translateY(-2px);
-}
-
-/* =========================
-   VOICE BUTTON
-========================= */
-
-.chat-actions {
-  display: flex;
+.chat-header-avatar {
+  width:         38px;
+  height:        38px;
+  border-radius: 50%;
+  background:    linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+  display:       flex;
+  align-items:   center;
   justify-content: center;
-
-  margin: 20px 0;
+  font-family:   var(--font-display);
+  font-weight:   700;
+  font-size:     1rem;
+  color:         #fff;
+  box-shadow:    0 0 16px rgba(124, 58, 237, 0.40);
+  flex-shrink:   0;
 }
 
-.voice-btn {
-  border: none;
+.chat-header-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size:   1rem;
+  color:       var(--color-text-primary);
+  line-height: 1.2;
+}
 
-  padding: 12px 22px;
+.chat-header-status {
+  font-size:   0.72rem;
+  font-weight: 500;
+  color:       #4ade80;
+  display:     flex;
+  align-items: center;
+  gap:         4px;
+}
 
-  border-radius: 30px;
+.chat-header-status::before {
+  content:       '';
+  display:       inline-block;
+  width:         6px;
+  height:        6px;
+  border-radius: 50%;
+  background:    #4ade80;
+  box-shadow:    0 0 6px rgba(74, 222, 128, 0.70);
+  animation:     loaderFade 2s ease-in-out infinite;
+}
 
-  cursor: pointer;
+.chat-header-actions {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-sm);
+}
 
-  color: white;
 
+/* ══════════════════════════════════════════════════════════
+   3. MESSAGE FEED
+      The scrollable area containing all chat bubbles
+   ══════════════════════════════════════════════════════════ */
+
+.chat-feed {
+  flex:                    1;
+  overflow-y:              auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width:         none;
+  padding:                 var(--space-md) var(--space-md) var(--space-sm);
+  display:                 flex;
+  flex-direction:          column;
+  gap:                     12px;
+}
+
+.chat-feed::-webkit-scrollbar {
+  display: none;
+}
+
+/* Fade-in top edge so messages fade out as they scroll up */
+.chat-feed-wrapper {
+  position:   relative;
+  flex:       1;
+  overflow:   hidden;
+  min-height: 0;
+}
+
+.chat-feed-wrapper::before {
+  content:    '';
+  position:   absolute;
+  top:        0; left: 0; right: 0;
+  height:     40px;
   background: linear-gradient(
-    135deg,
-    #ff006e,
-    #8338ec
+    to bottom,
+    rgba(232, 228, 248, 0.70) 0%,
+    transparent 100%
   );
-
-  transition: 0.3s;
+  pointer-events: none;
+  z-index:    2;
 }
 
-.voice-btn:hover {
-  transform: scale(1.05);
+
+/* ══════════════════════════════════════════════════════════
+   4. MESSAGE ROW
+      Wrapper that controls left/right alignment
+   ══════════════════════════════════════════════════════════ */
+
+.msg-row {
+  display:        flex;
+  align-items:    flex-end;
+  gap:            8px;
+  width:          100%;
 }
 
-.voice-btn.active {
-  animation: pulse 1s infinite;
+.msg-row.user {
+  flex-direction: row-reverse;
+}
+
+.msg-row.ai {
+  flex-direction: row;
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   5. AVATAR (small, next to each message)
+   ══════════════════════════════════════════════════════════ */
+
+.msg-avatar {
+  width:           28px;
+  height:          28px;
+  border-radius:   50%;
+  flex-shrink:     0;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       0.7rem;
+  font-weight:     700;
+  color:           #fff;
+  margin-bottom:   2px;   /* aligns with bubble bottom */
+}
+
+.msg-avatar.ai {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.35);
+}
+
+.msg-avatar.user {
+  background: linear-gradient(135deg, #f472b6 0%, #a855f7 100%);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.30);
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   6. MESSAGE CONTENT COLUMN
+      Holds bubble + timestamp together
+   ══════════════════════════════════════════════════════════ */
+
+.msg-col {
+  display:        flex;
+  flex-direction: column;
+  gap:            3px;
+  max-width:      78%;
+}
+
+.msg-row.user .msg-col {
+  align-items: flex-end;
+}
+
+.msg-row.ai .msg-col {
+  align-items: flex-start;
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   7. TIMESTAMP
+   ══════════════════════════════════════════════════════════ */
+
+.msg-time {
+  font-size:   0.65rem;
+  color:       var(--color-text-muted);
+  padding:     0 4px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   8. DATE SEPARATOR
+      "Today", "Yesterday", actual date dividers
+   ══════════════════════════════════════════════════════════ */
+
+.chat-date-sep {
+  display:         flex;
+  align-items:     center;
+  gap:             var(--space-sm);
+  padding:         var(--space-sm) 0;
+  color:           var(--color-text-muted);
+  font-size:       0.72rem;
+  font-weight:     500;
+  letter-spacing:  0.06em;
+  text-transform:  uppercase;
+}
+
+.chat-date-sep::before,
+.chat-date-sep::after {
+  content:    '';
+  flex:       1;
+  height:     1px;
+  background: rgba(139, 100, 220, 0.18);
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   9. CHAT INPUT BAR
+      Bottom area: + icon, text input, mic button
+   ══════════════════════════════════════════════════════════ */
+
+.chat-input-area {
+  flex-shrink:    0;
+  padding:        var(--space-sm) var(--space-md) var(--space-md);
+  z-index:        var(--z-card);
+  animation:      slideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.chat-input-row {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-sm);
+  padding:     8px 8px 8px var(--space-md);
+}
+
+/* The "+" attach button on the left */
+.chat-attach-btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           34px;
+  height:          34px;
+  border-radius:   50%;
+  background:      rgba(139, 100, 220, 0.12);
+  border:          1px solid rgba(139, 100, 220, 0.20);
+  color:           var(--color-text-secondary);
+  font-size:       1.2rem;
+  flex-shrink:     0;
+  cursor:          pointer;
+  transition:
+    background  var(--transition-fast),
+    transform   var(--transition-fast);
+}
+
+.chat-attach-btn:hover {
+  background: rgba(139, 100, 220, 0.22);
+  transform:  scale(1.08);
+}
+
+.chat-attach-btn:active {
+  transform: scale(0.92);
+}
+
+/* Text input inside the pill */
+.chat-text-input {
+  flex:        1;
+  background:  transparent;
+  border:      none;
+  outline:     none;
+  font-family: var(--font-body);
+  font-size:   0.92rem;
+  color:       var(--color-text-primary);
+  min-height:  24px;
+  max-height:  100px;
+  resize:      none;
+  line-height: 1.5;
+  padding:     2px 0;
+  scrollbar-width: none;
+}
+
+.chat-text-input::-webkit-scrollbar {
+  display: none;
+}
+
+.chat-text-input::placeholder {
+  color:       var(--color-text-muted);
+  font-weight: 400;
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   10. EMPTY STATE
+       Shown when chat has no messages yet
+   ══════════════════════════════════════════════════════════ */
+
+.chat-empty {
+  flex:            1;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             var(--space-md);
+  padding:         var(--space-2xl) var(--space-lg);
+  text-align:      center;
+  animation:       fadeUp 0.5s ease both;
+}
+
+.chat-empty-icon {
+  width:         64px;
+  height:        64px;
+  border-radius: 50%;
+  background:    linear-gradient(135deg, rgba(167,139,250,0.25), rgba(124,58,237,0.15));
+  border:        1px solid rgba(167, 139, 250, 0.30);
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  font-size:     1.8rem;
+}
+
+.chat-empty h3 {
+  font-size:   1.1rem;
+  font-weight: 600;
+  color:       var(--color-text-primary);
+}
+
+.chat-empty p {
+  font-size:  0.88rem;
+  color:      var(--color-text-muted);
+  max-width:  220px;
+  line-height: 1.6;
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   11. SCROLL-TO-BOTTOM BUTTON
+       Appears when user has scrolled up in chat
+   ══════════════════════════════════════════════════════════ */
+
+.chat-scroll-btn {
+  position:        absolute;
+  bottom:          90px;
+  right:           var(--space-md);
+  width:           36px;
+  height:          36px;
+  border-radius:   50%;
+  background:      rgba(255, 255, 255, 0.70);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border:          1px solid rgba(255, 255, 255, 0.80);
+  box-shadow:      0 4px 16px rgba(139, 100, 220, 0.18);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  cursor:          pointer;
+  color:           var(--color-text-secondary);
+  font-size:       1rem;
+  z-index:         var(--z-card);
+  animation:       scaleIn 0.25s ease both;
+  transition:      transform var(--transition-fast);
+}
+
+.chat-scroll-btn:hover {
+  transform: scale(1.10);
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   12. VOICE WAVEFORM  (shown when mic is active)
+   ══════════════════════════════════════════════════════════ */
+
+.voice-waveform {
+  display:     flex;
+  align-items: center;
+  gap:         3px;
+  padding:     4px 0;
+}
+
+.voice-waveform span {
+  display:       block;
+  width:         3px;
+  border-radius: var(--radius-full);
+  background:    linear-gradient(to top, #a78bfa, #7c3aed);
+  animation:     typingBounce 0.8s ease-in-out infinite;
+}
+
+.voice-waveform span:nth-child(1) { height: 10px; animation-delay: 0.00s; }
+.voice-waveform span:nth-child(2) { height: 18px; animation-delay: 0.10s; }
+.voice-waveform span:nth-child(3) { height: 24px; animation-delay: 0.20s; }
+.voice-waveform span:nth-child(4) { height: 18px; animation-delay: 0.10s; }
+.voice-waveform span:nth-child(5) { height: 10px; animation-delay: 0.00s; }
+
+
+/* ══════════════════════════════════════════════════════════
+   13. RESPONSIVE
+   ══════════════════════════════════════════════════════════ */
+
+@media (max-width: 400px) {
+  .msg-col        { max-width: 85%; }
+  .chat-input-row { padding: 6px 6px 6px 12px; }
+  .chat-header    { padding: 10px var(--space-sm); }
 }
