@@ -1,212 +1,404 @@
-import { useState, useRef, useEffect } from "react";
-import { sendMessage } from "../utils/api";
+/* ============================================================
+   ChatBox.jsx  —  Mr.INIX Core Chat Engine
+   Handles message rendering, input, sending, auto-scroll,
+   typing indicator, and error states.
+   ============================================================ */
 
-export default function ChatBox() {
-  const [messages, setMessages] = useState([
-    { role: "assistant", text: "Hello! I'm Mr.INIX. How can I help you today?" }
-  ]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const bottomRef = useRef(null);
+import React, {
+  useState, useEffect, useRef, useCallback
+} from "react";
 
-  // Auto-scroll to latest message
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+import { useApp }          from "../App";
+import { sendChat }        from "../utils/api";
+import {
+  createMessage,
+  formatTime,
+  groupMessagesByDate,
+  isNearBottom,
+  scrollToBottom,
+  isBlank,
+}                          from "../utils/helpers";
+import { CHAT, ERRORS }    from "../utils/constants";
+import { MiniLoader }      from "./Loader";
+import VoiceButton         from "./VoiceButton";
+import { ORB_STATE }       from "./FloatingOrb";
 
-  const handleSend = async () => {
-    const trimmed = input.trim();
-    if (!trimmed || loading) return;
+/* ── Icons ── */
+import { IoSend }          from "react-icons/io5";
+import { IoAdd }           from "react-icons/io5";
+import { IoChevronDown }   from "react-icons/io5";
 
-    // 1. Add user message immediately
-    const userMsg = { role: "user", text: trimmed };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    setLoading(true);
 
-    try {
-      // 2. Call backend
-      const reply = await sendMessage(trimmed);
+/* ══════════════════════════════════════════════════════════
+   DATE SEPARATOR ROW
+   ══════════════════════════════════════════════════════════ */
 
-      // 3. Add AI reply
-      setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          text: `⚠️ Error: ${err.message}. Check that your Flask server is running.`,
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+function DateSeparator({ label }) {
+  return (
+    <div className="chat-date-sep">
+      {label}
+    </div>
+  );
+}
 
-  // Allow Enter key to send (Shift+Enter = new line)
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+
+/* ══════════════════════════════════════════════════════════
+   SINGLE MESSAGE BUBBLE
+   ══════════════════════════════════════════════════════════ */
+
+function MessageBubble({ message }) {
+  const isUser = message.role === CHAT.ROLES.USER;
 
   return (
-    <div style={styles.wrapper}>
-      {/* Header */}
-      <div style={styles.header}>
-        <span style={styles.dot} />
-        <span style={styles.headerTitle}>Mr.INIX</span>
+    <div className={`msg-row ${isUser ? "user" : "ai"}`}>
+
+      {/* Avatar */}
+      <div className={`msg-avatar ${isUser ? "user" : "ai"}`}>
+        {isUser ? "U" : "M"}
       </div>
 
-      {/* Messages */}
-      <div style={styles.messageArea}>
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              ...styles.bubble,
-              alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-              background:
-                msg.role === "user"
-                  ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
-                  : "#1e1e2e",
-              color: "#f0f0ff",
-              borderRadius:
-                msg.role === "user"
-                  ? "18px 18px 4px 18px"
-                  : "18px 18px 18px 4px",
-            }}
-          >
-            {msg.text}
-          </div>
-        ))}
-
-        {loading && (
-          <div
-            style={{
-              ...styles.bubble,
-              alignSelf: "flex-start",
-              background: "#1e1e2e",
-              color: "#888",
-              fontStyle: "italic",
-            }}
-          >
-            Mr.INIX is thinking…
-          </div>
-        )}
-
-        <div ref={bottomRef} />
+      {/* Bubble + timestamp */}
+      <div className="msg-col">
+        <div className={isUser ? "bubble-user" : "bubble-ai"}>
+          {message.text}
+        </div>
+        <div className="msg-time">
+          {formatTime(new Date(message.timestamp))}
+        </div>
       </div>
 
-      {/* Input row */}
-      <div style={styles.inputRow}>
-        <textarea
-          style={styles.textarea}
-          placeholder="Type a message…"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={1}
-          disabled={loading}
-        />
-        <button
-          style={{
-            ...styles.sendBtn,
-            opacity: !input.trim() || loading ? 0.45 : 1,
-            cursor: !input.trim() || loading ? "not-allowed" : "pointer",
-          }}
-          onClick={handleSend}
-          disabled={!input.trim() || loading}
-          aria-label="Send message"
-        >
-          ➤
-        </button>
+    </div>
+  );
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   TYPING INDICATOR
+   ══════════════════════════════════════════════════════════ */
+
+function TypingIndicator() {
+  return (
+    <div className="msg-row ai">
+      <div className="msg-avatar ai">M</div>
+      <div className="msg-col">
+        <div className="bubble-typing">
+          <span /><span /><span />
+        </div>
       </div>
     </div>
   );
 }
 
-const styles = {
-  wrapper: {
-    display: "flex",
-    flexDirection: "column",
-    height: "100vh",
-    maxWidth: 680,
-    margin: "0 auto",
-    background: "#0d0d1a",
-    fontFamily: "'Segoe UI', sans-serif",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "16px 20px",
-    borderBottom: "1px solid #2a2a3d",
-    background: "#10101f",
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: "50%",
-    background: "#6366f1",
-    boxShadow: "0 0 8px #6366f1",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 700,
-    color: "#e0e0ff",
-    letterSpacing: 1,
-  },
-  messageArea: {
-    flex: 1,
-    overflowY: "auto",
-    padding: "20px 16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-  },
-  bubble: {
-    maxWidth: "75%",
-    padding: "12px 16px",
-    fontSize: 15,
-    lineHeight: 1.5,
-    wordBreak: "break-word",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-  },
-  inputRow: {
-    display: "flex",
-    gap: 10,
-    padding: "12px 16px",
-    borderTop: "1px solid #2a2a3d",
-    background: "#10101f",
-    alignItems: "flex-end",
-  },
-  textarea: {
-    flex: 1,
-    background: "#1a1a2e",
-    border: "1px solid #3a3a5c",
-    borderRadius: 12,
-    color: "#e0e0ff",
-    fontSize: 15,
-    padding: "10px 14px",
-    resize: "none",
-    outline: "none",
-    fontFamily: "inherit",
-    lineHeight: 1.5,
-  },
+
+/* ══════════════════════════════════════════════════════════
+   EMPTY STATE
+   ══════════════════════════════════════════════════════════ */
+
+function EmptyState() {
+  return (
+    <div className="chat-empty">
+      <div className="chat-empty-icon">💬</div>
+      <h3>Start a conversation</h3>
+      <p>Ask Mr.INIX anything — type below or tap the mic</p>
+    </div>
+  );
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   MAIN CHATBOX COMPONENT
+   ══════════════════════════════════════════════════════════ */
+
+export default function ChatBox({ onOrbStateChange }) {
+  const { messages, setMessages, isOnline } = useApp();
+
+  const [input,       setInput]       = useState("");
+  const [isTyping,    setIsTyping]    = useState(false);  // AI thinking
+  const [showScroll,  setShowScroll]  = useState(false);  // scroll-to-bottom btn
+  const [charCount,   setCharCount]   = useState(0);
+
+  const feedRef    = useRef(null);
+  const inputRef   = useRef(null);
+  const typingTimer= useRef(null);
+
+
+  /* ── Auto-scroll when messages change ─────────────────── */
+  useEffect(() => {
+    const feed = feedRef.current;
+    if (!feed) return;
+    if (isNearBottom(feed, CHAT.SCROLL_THRESHOLD_PX)) {
+      scrollToBottom(feed);
+    }
+  }, [messages, isTyping]);
+
+
+  /* ── Show/hide scroll-to-bottom button ────────────────── */
+  function handleFeedScroll() {
+    const feed = feedRef.current;
+    if (!feed) return;
+    setShowScroll(!isNearBottom(feed, CHAT.SCROLL_THRESHOLD_PX));
+  }
+
+
+  /* ── Send seeded message from SuggestionCards ─────────── */
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (
+      messages.length === 1 &&
+      last?.role === CHAT.ROLES.USER &&
+      !last?._sent
+    ) {
+      /* Mark as sent so we don't re-trigger */
+      setMessages(prev =>
+        prev.map((m, i) =>
+          i === prev.length - 1 ? { ...m, _sent: true } : m
+        )
+      );
+      sendToBackend(last.text, messages);
+    }
+  }, []); // runs once on mount
+
+
+  /* ── Core send function ────────────────────────────────── */
+  const sendToBackend = useCallback(async (text, currentMessages) => {
+    if (!isOnline) {
+      appendMessage("assistant", ERRORS.NETWORK);
+      return;
+    }
+
+    /* Show orb thinking */
+    onOrbStateChange?.(ORB_STATE.THINKING);
+    setIsTyping(true);
+
+    /* Delay so typing indicator renders first */
+    typingTimer.current = setTimeout(async () => {
+      try {
+        const reply = await sendChat(text, currentMessages);
+        appendMessage("assistant", reply);
+        onOrbStateChange?.(ORB_STATE.IDLE);
+      } catch (err) {
+        appendMessage("assistant", err.message || ERRORS.UNKNOWN);
+        onOrbStateChange?.(ORB_STATE.IDLE);
+      } finally {
+        setIsTyping(false);
+      }
+    }, CHAT.TYPING_DELAY_MS);
+  }, [isOnline, onOrbStateChange]);
+
+
+  /* ── Append a message to state ─────────────────────────── */
+  function appendMessage(role, text) {
+    setMessages(prev => [...prev, createMessage(role, text)]);
+  }
+
+
+  /* ── Handle send button / Enter key ───────────────────── */
+  async function handleSend() {
+    const text = input.trim();
+    if (isBlank(text) || isTyping) return;
+    if (text.length > CHAT.MAX_INPUT_LENGTH) return;
+
+    const userMsg = createMessage("user", text);
+    const updated = [...messages, { ...userMsg, _sent: true }];
+
+    setMessages(updated);
+    setInput("");
+    setCharCount(0);
+    inputRef.current?.focus();
+
+    await sendToBackend(text, updated);
+  }
+
+
+  /* ── Input change ──────────────────────────────────────── */
+  function handleInputChange(e) {
+    const val = e.target.value;
+    if (val.length > CHAT.MAX_INPUT_LENGTH) return;
+    setInput(val);
+    setCharCount(val.length);
+  }
+
+
+  /* ── Enter to send, Shift+Enter = new line ─────────────── */
+  function handleKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }
+
+
+  /* ── Voice transcript received ─────────────────────────── */
+  function handleVoiceTranscript(transcript) {
+    setInput(transcript);
+    setCharCount(transcript.length);
+    inputRef.current?.focus();
+  }
+
+
+  /* ── Voice state → orb state ───────────────────────────── */
+  function handleVoiceStateChange(isListening) {
+    onOrbStateChange?.(
+      isListening ? ORB_STATE.LISTENING : ORB_STATE.IDLE
+    );
+  }
+
+
+  /* ── Cleanup on unmount ────────────────────────────────── */
+  useEffect(() => {
+    return () => clearTimeout(typingTimer.current);
+  }, []);
+
+
+  /* ── Group messages by date for separators ─────────────── */
+  const grouped = groupMessagesByDate(messages);
+  const hasMessages = messages.length > 0;
+  const nearMax = charCount > CHAT.MAX_INPUT_LENGTH * 0.85;
+
+
+  /* ══════════════════════════════════════════════════════════
+     RENDER
+     ══════════════════════════════════════════════════════════ */
+  return (
+    <div className="chat-page">
+
+      {/* ── Message feed ── */}
+      <div className="chat-feed-wrapper">
+        <div
+          className="chat-feed scroll-y"
+          ref={feedRef}
+          onScroll={handleFeedScroll}
+        >
+          {!hasMessages && <EmptyState />}
+
+          {grouped.map((group, gi) => (
+            <React.Fragment key={gi}>
+
+              {/* Date separator */}
+              <DateSeparator label={group.dateLabel} />
+
+              {/* Messages in this date group */}
+              {group.messages.map(msg => (
+                <MessageBubble key={msg.id} message={msg} />
+              ))}
+
+            </React.Fragment>
+          ))}
+
+          {/* Typing indicator */}
+          {isTyping && <TypingIndicator />}
+
+        </div>
+
+        {/* Scroll-to-bottom button */}
+        {showScroll && (
+          <button
+            className="chat-scroll-btn"
+            onClick={() => scrollToBottom(feedRef.current)}
+            aria-label="Scroll to bottom"
+          >
+            <IoChevronDown size={16} />
+          </button>
+        )}
+      </div>
+
+
+      {/* ── Input bar ── */}
+      <div className="chat-input-area">
+
+        {/* Char counter — only shows near limit */}
+        {nearMax && (
+          <div style={s.charCounter}>
+            <span style={{ color: charCount >= CHAT.MAX_INPUT_LENGTH ? "#f87171" : "var(--color-text-muted)" }}>
+              {charCount}/{CHAT.MAX_INPUT_LENGTH}
+            </span>
+          </div>
+        )}
+
+        <div className="glass-input-bar chat-input-row">
+
+          {/* Attach / extra options button */}
+          <button
+            className="chat-attach-btn"
+            aria-label="Attach"
+            onClick={() => {/* future: file upload */}}
+          >
+            <IoAdd size={18} />
+          </button>
+
+          {/* Text input */}
+          <textarea
+            ref={inputRef}
+            className="chat-text-input"
+            placeholder={CHAT.PLACEHOLDER}
+            value={input}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            disabled={isTyping}
+            rows={1}
+            aria-label="Message input"
+          />
+
+          {/* Voice button */}
+          <VoiceButton
+            onTranscript={handleVoiceTranscript}
+            onStateChange={handleVoiceStateChange}
+            disabled={isTyping}
+          />
+
+          {/* Send button — shows when input has text */}
+          {input.trim().length > 0 && (
+            <button
+              style={{
+                ...s.sendBtn,
+                opacity: isTyping ? 0.45 : 1,
+                cursor:  isTyping ? "not-allowed" : "pointer",
+              }}
+              onClick={handleSend}
+              disabled={isTyping}
+              aria-label="Send message"
+            >
+              {isTyping
+                ? <MiniLoader size={18} color="#fff" />
+                : <IoSend size={17} />
+              }
+            </button>
+          )}
+
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   STYLES
+   ══════════════════════════════════════════════════════════ */
+
+const s = {
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: "50%",
-    border: "none",
-    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-    color: "#fff",
-    fontSize: 18,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "opacity 0.2s",
-    flexShrink: 0,
+    width:           42,
+    height:          42,
+    borderRadius:    "50%",
+    border:          "none",
+    background:      "linear-gradient(135deg,#a78bfa,#7c3aed)",
+    color:           "#fff",
+    display:         "flex",
+    alignItems:      "center",
+    justifyContent:  "center",
+    flexShrink:      0,
+    boxShadow:       "0 4px 16px rgba(124,58,237,0.40)",
+    transition:      "opacity 0.2s ease, transform 0.15s ease",
+    animation:       "scaleIn 0.2s ease both",
+  },
+
+  charCounter: {
+    textAlign:   "right",
+    padding:     "0 16px 4px",
+    fontSize:    "0.70rem",
+    fontFamily:  "var(--font-body)",
+    transition:  "color 0.2s ease",
   },
 };
