@@ -1,87 +1,134 @@
-# ============================================================
-# app.py  —  Mr.INIX Flask Backend
-# ============================================================
-#
-# Install deps:
-#   pip install flask flask-cors
-#
-# Run (all interfaces — required for Termux / LAN access):
-#   python app.py
-#
-# Test from terminal:
-#   curl -X POST http://localhost:5000/chat \
-#        -H "Content-Type: application/json" \
-#        -d '{"message": "hello"}'
-# ============================================================
+"""
+app.py  -  Mr.INIX Flask Backend Entry Point
+==============================================
+Creates the Flask app, enables CORS, registers all route
+blueprints, and starts the server on 0.0.0.0:5000 so the
+React frontend (and other devices on your network) can reach it.
 
-from flask import Flask, request, jsonify
+Run from the backend/ folder:
+    pip install -r requirements.txt
+    python app.py
+
+Blueprints are registered safely: if a route file does not
+exist yet (we are building file by file), the server still
+starts and prints a warning instead of crashing.
+"""
+
+import importlib
+import os
+import time
+
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-app = Flask(__name__)
 
-# ── CORS ──────────────────────────────────────────────────────
-# Allow requests from any origin during development.
-# In production, replace "*" with your actual frontend URL:
-#   CORS(app, origins=["https://yourdomain.com"])
-CORS(app, origins="*")
+# ------------------------------------------------------------
+# Settings (overridable with environment variables)
+# ------------------------------------------------------------
+HOST  = os.environ.get("MRINIX_HOST", "0.0.0.0")
+PORT  = int(os.environ.get("MRINIX_PORT", "5000"))
+DEBUG = os.environ.get("MRINIX_DEBUG", "1") == "1"
 
-
-# ── Health check ──────────────────────────────────────────────
-@app.route("/", methods=["GET"])
-def index():
-    return jsonify({"status": "Mr.INIX backend is running ✅"})
-
-
-# ── Main chat endpoint ─────────────────────────────────────────
-@app.route("/chat", methods=["POST"])
-def chat():
-    # 1. Parse request body
-    data = request.get_json(silent=True)
-    if not data:
-        return jsonify({"error": "Request body must be JSON"}), 400
-
-    user_message = data.get("message", "").strip()
-    if not user_message:
-        return jsonify({"error": "Field 'message' is required and cannot be empty"}), 400
-
-    print(f"[Mr.INIX] Received: {user_message}")  # ← visible in your terminal
-
-    # 2. Generate reply  ← plug in your real AI logic here
-    reply = generate_reply(user_message)
-
-    print(f"[Mr.INIX] Sending : {reply}")
-
-    # 3. Return JSON — frontend expects exactly { "reply": "..." }
-    return jsonify({"reply": reply})
+# Blueprint modules to load: (module path, url prefix)
+# Each module must expose a Blueprint named `bp`.
+BLUEPRINTS = [
+    ("routes.chat",      ""),   # POST /chat
+    ("routes.image",     ""),   # POST /image
+    ("routes.voice",     ""),   # POST /voice
+    ("routes.translate", ""),   # POST /translate
+]
 
 
-# ── AI logic (replace with your real model) ───────────────────
-def generate_reply(message: str) -> str:
-    """
-    Replace this function body with your actual AI integration.
+def create_app() -> Flask:
+    app = Flask(__name__)
+    app.config["JSON_SORT_KEYS"] = False
 
-    Examples:
-      - OpenAI:   openai.ChatCompletion.create(...)
-      - Gemini:   google.generativeai.GenerativeModel(...)
-      - Ollama:   requests.post("http://localhost:11434/api/chat", ...)
-      - Custom:   your own ML model
-    """
-    msg = message.lower()
+    # --------------------------------------------------------
+    # CORS - lets React (port 3000) call Flask (port 5000)
+    # --------------------------------------------------------
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
-    if any(w in msg for w in ["hello", "hi", "hey"]):
-        return "Hello! I'm Mr.INIX. What can I do for you?"
-    if "your name" in msg or "who are you" in msg:
-        return "I'm Mr.INIX, your AI assistant. Nice to meet you!"
-    if "how are you" in msg:
-        return "I'm running smoothly and ready to help!"
-    if "bye" in msg or "goodbye" in msg:
-        return "Goodbye! Come back anytime. 👋"
+    # --------------------------------------------------------
+    # Database (optional until database/db.py exists)
+    # --------------------------------------------------------
+    try:
+        from database.db import init_db
+        init_db()
+        print("[Mr.INIX] Database ready")
+    except ImportError:
+        print("[Mr.INIX] database/db.py not found yet - skipping DB init")
+    except Exception as err:
+        print(f"[Mr.INIX] Database init failed: {err}")
 
-    return f"You said: \"{message}\". (Plug in your AI model in generate_reply() to get real answers.)"
+    # --------------------------------------------------------
+    # Register blueprints
+    # --------------------------------------------------------
+    for module_path, prefix in BLUEPRINTS:
+        try:
+            module = importlib.import_module(module_path)
+            app.register_blueprint(module.bp, url_prefix=prefix)
+            print(f"[Mr.INIX] Loaded {module_path}")
+        except ImportError as err:
+            print(f"[Mr.INIX] WARNING: could not load {module_path} ({err})")
+        except AttributeError:
+            print(f"[Mr.INIX] WARNING: {module_path} has no Blueprint named 'bp'")
+
+    # --------------------------------------------------------
+    # Request logging - proves POST /chat reaches Flask
+    # --------------------------------------------------------
+    @app.before_request
+    def log_request():
+        request._start = time.time()
+        if request.method != "OPTIONS":
+            print(f"[Mr.INIX] --> {request.method} {request.path} "
+                  f"from {request.remote_addr}")
+
+    @app.after_request
+    def log_response(response):
+        started = getattr(request, "_start", None)
+        if started and request.method != "OPTIONS":
+            ms = (time.time() - started) * 1000
+            print(f"[Mr.INIX] <-- {response.status_code} "
+                  f"{request.path} ({ms:.0f} ms)")
+        return response
+
+    # --------------------------------------------------------
+    # Health check - frontend checkHealth() calls GET /
+    # --------------------------------------------------------
+    @app.route("/", methods=["GET"])
+    def health():
+        return jsonify({
+            "status":  "online",
+            "app":     "Mr.INIX",
+            "version": "1.0.0",
+        })
+
+    # --------------------------------------------------------
+    # JSON error handlers (frontend api.js expects JSON errors)
+    # --------------------------------------------------------
+    @app.errorhandler(404)
+    def not_found(_):
+        return jsonify({"error": f"Route {request.path} not found"}), 404
+
+    @app.errorhandler(405)
+    def method_not_allowed(_):
+        return jsonify({"error": f"{request.method} not allowed on {request.path}"}), 405
+
+    @app.errorhandler(500)
+    def server_error(err):
+        print(f"[Mr.INIX] ERROR: {err}")
+        return jsonify({"error": "Internal server error"}), 500
+
+    return app
 
 
-# ── Entry point ───────────────────────────────────────────────
+app = create_app()
+
+
 if __name__ == "__main__":
-    # host="0.0.0.0"  →  listen on ALL interfaces (localhost + LAN)
-    # This is REQUIRED for Termux / mobile access from other devices
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    print("=" * 52)
+    print("  Mr.INIX Flask Backend")
+    print(f"  Listening on http://{HOST}:{PORT}")
+    print("  Find your LAN IP:  ip addr | grep 'inet 192'")
+    print("=" * 52)
+    app.run(host=HOST, port=PORT, debug=DEBUG)
