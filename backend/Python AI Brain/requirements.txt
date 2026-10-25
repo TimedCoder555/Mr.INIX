@@ -1,3 +1,32 @@
-flask
-flask-cors
-requests
+# ============================================================
+# requirements.txt  -  Mr.INIX Backend Dependencies
+# ============================================================
+# Install (run inside backend/):
+#     pip install -r requirements.txt
+#
+# Kept lean on purpose: every package below is pure Python,
+# so it installs cleanly in Termux with no compiling.
+# ============================================================
+
+# --- Core web server ---
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# --- HTTP client (used by routes/ and ai/ to call outside APIs) ---
+requests>=2.31.0
+
+# --- Reads secrets from a .env file (API keys, etc.) ---
+python-dotenv>=1.0.0
+
+# ------------------------------------------------------------
+# OPTIONAL - uncomment ONE when you connect a real AI model
+# in ai/chatbot.py. Not needed for the built-in rule-based
+# replies.
+# ------------------------------------------------------------
+# google-generativeai>=0.5.0   # Gemini
+# openai>=1.0.0                # OpenAI
+
+# ------------------------------------------------------------
+# OPTIONAL - production server (not needed for local dev)
+# ------------------------------------------------------------
+# gunicorn>=21.2.0
