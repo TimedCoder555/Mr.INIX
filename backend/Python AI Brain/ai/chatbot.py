@@ -1,37 +1,204 @@
-import random
+"""
+ai/chatbot.py  -  Mr.INIX AI Brain
+===================================
+routes/chat.py calls:   get_reply(message, history) -> str
 
-class ChatBot:
+Reply order
+-----------
+1. ai/chemistry_ai.py   (optional)  quick local chemistry answers
+2. A real AI model      (optional)  any OpenAI-compatible chat API
+3. Built-in replies     (always)    so the app never breaks
 
-    def __init__(self):
-        self.name = "Mr.INIX"
+Connect a real model (backend/.env or `export` in Termux)
+---------------------------------------------------------
+    MRINIX_AI_KEY=your-api-key
+    MRINIX_AI_MODEL=model-name-from-your-provider
+    MRINIX_AI_URL=https://generativelanguage.googleapis.com/v1beta/openai   # default
 
-    def get_response(self, message):
+The default URL is Google Gemini's OpenAI-compatible endpoint. Any other
+provider that offers a "/chat/completions" API works by changing the URL
+(OpenAI, Groq, OpenRouter, a local Ollama server, ...).
+Model names change often, so there is no default: copy a current name
+from your provider's docs.
 
-        message = message.lower()
+Optional sibling modules (written in the next files). Their expected shape:
+    ai/prompts.py        SYSTEM_PROMPT: str
+    ai/memory.py         get_memory_context() -> str
+    ai/chemistry_ai.py   try_chemistry(message: str) -> str | None
+"""
 
-        # Basic AI responses
-        if "hello" in message or "hi" in message:
-            return "Hello! I am Mr.INIX 🤖 How can I help you?"
+import os
+from datetime import datetime
 
-        elif "your name" in message:
-            return "My name is Mr.INIX, your AI assistant."
+import requests
 
-        elif "who are you" in message:
-            return "I am Mr.INIX AI Brain built for Chemix-Encyclopedia system."
+try:                                    # backend/.env support (python-dotenv)
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
-        elif "help" in message:
-            return "I can help you with chemistry, coding, and general questions."
+# ------------------------------------------------------------
+# Optional modules - safe fallbacks until those files exist
+# ------------------------------------------------------------
+try:
+    from ai.prompts import SYSTEM_PROMPT
+except ImportError:
+    SYSTEM_PROMPT = (
+        "You are Mr.INIX, a friendly futuristic AI assistant. "
+        "Give clear, helpful answers. Keep replies concise unless the "
+        "user asks for detail."
+    )
 
-        elif "joke" in message:
-            jokes = [
-                "Why do chemists like nitrates? Because they're cheaper than day rates 😆",
-                "I would tell you a chemistry joke, but I know I wouldn't get a reaction 😄"
-            ]
-            return random.choice(jokes)
+try:
+    from ai.memory import get_memory_context
+except ImportError:
+    def get_memory_context() -> str:
+        return ""
 
-        elif "bye" in message:
-            return "Goodbye! Stay curious 🧪⚡"
+try:
+    from ai.chemistry_ai import try_chemistry
+except ImportError:
+    def try_chemistry(message: str):
+        return None
 
-        # Default fallback AI
-        else:
-            return f"You said: {message}. I'm still learning 🧠🤖"
+
+# ------------------------------------------------------------
+# Settings (read at call time so .env changes apply on restart)
+# ------------------------------------------------------------
+DEFAULT_AI_URL  = "https://generativelanguage.googleapis.com/v1beta/openai"
+REQUEST_TIMEOUT = 30
+TEMPERATURE     = 0.7
+
+
+def ai_settings() -> dict:
+    return {
+        "key":   os.environ.get("MRINIX_AI_KEY", "").strip(),
+        "model": os.environ.get("MRINIX_AI_MODEL", "").strip(),
+        "url":   os.environ.get("MRINIX_AI_URL", DEFAULT_AI_URL).strip().rstrip("/"),
+    }
+
+
+def ai_is_configured() -> bool:
+    cfg = ai_settings()
+    return bool(cfg["key"] and cfg["model"])
+
+
+# ------------------------------------------------------------
+# Real AI model call (OpenAI-compatible chat completions)
+# ------------------------------------------------------------
+class AIServiceError(Exception):
+    pass
+
+
+def build_messages(message: str, history: list) -> list:
+    system = SYSTEM_PROMPT
+    memory = get_memory_context()
+    if memory:
+        system += "\n\nWhat you know about the user:\n" + memory
+
+    # The frontend already includes the newest user message in history.
+    # Drop it so the model doesn't see the same message twice.
+    if (history and history[-1].get("role") == "user"
+            and history[-1].get("content") == message):
+        history = history[:-1]
+
+    return (
+        [{"role": "system", "content": system}]
+        + [{"role": h["role"], "content": h["content"]} for h in history]
+        + [{"role": "user", "content": message}]
+    )
+
+
+def call_model(message: str, history: list) -> str:
+    cfg = ai_settings()
+    try:
+        response = requests.post(
+            f"{cfg['url']}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {cfg['key']}",
+                "Content-Type":  "application/json",
+            },
+            json={
+                "model":       cfg["model"],
+                "messages":    build_messages(message, history),
+                "temperature": TEMPERATURE,
+            },
+            timeout=REQUEST_TIMEOUT,
+        )
+    except requests.Timeout:
+        raise AIServiceError("AI service timed out")
+    except requests.RequestException as err:
+        raise AIServiceError(f"could not reach AI service ({err})")
+
+    if not response.ok:
+        # Show the provider's own error text in the Termux log (helps with
+        # wrong key / wrong model name). Never sent to the user's screen.
+        raise AIServiceError(f"AI service HTTP {response.status_code}: {response.text[:300]}")
+
+    try:
+        text = response.json()["choices"][0]["message"]["content"]
+    except (ValueError, KeyError, IndexError, TypeError):
+        raise AIServiceError("AI service returned an unexpected response")
+
+    text = (text or "").strip()
+    if not text:
+        raise AIServiceError("AI service returned an empty reply")
+    return text
+
+
+# ------------------------------------------------------------
+# Built-in fallback replies (no internet or key needed)
+# ------------------------------------------------------------
+def builtin_reply(message: str) -> str:
+    text = message.lower()
+
+    if any(w in text.split() for w in ("hello", "hi", "hey")):
+        return "Hello! I'm Mr.INIX. How can I help you today?"
+    if "who are you" in text or "your name" in text:
+        return "I'm Mr.INIX, your futuristic AI assistant."
+    if "how are you" in text:
+        return "Running at full power and ready to help!"
+    if "time" in text and "what" in text:
+        return f"It's {datetime.now().strftime('%I:%M %p')} on the server."
+    if "date" in text and "what" in text:
+        return f"Today is {datetime.now().strftime('%A, %B %d, %Y')}."
+    if "thank" in text:
+        return "You're welcome!"
+    if any(w in text for w in ("bye", "goodbye")):
+        return "Goodbye! Come back anytime."
+    if "help" in text:
+        return ("I can chat, translate text, and create images. "
+                "Connect an AI model in backend/.env to unlock smarter answers.")
+
+    return ("I'm running in basic mode right now, so I can only handle simple "
+            "questions. Connect an AI model (MRINIX_AI_KEY and MRINIX_AI_MODEL "
+            "in backend/.env) for full answers.")
+
+
+# ------------------------------------------------------------
+# Public function used by routes/chat.py
+# ------------------------------------------------------------
+def get_reply(message: str, history: list = None) -> str:
+    history = history or []
+
+    # 1. Local chemistry shortcut (optional module)
+    try:
+        chem = try_chemistry(message)
+        if chem:
+            return chem
+    except Exception as err:
+        print(f"[Mr.INIX] chemistry_ai error: {err}")
+
+    # 2. Real AI model
+    if ai_is_configured():
+        try:
+            return call_model(message, history)
+        except AIServiceError as err:
+            print(f"[Mr.INIX] AI error: {err}")
+            return (builtin_reply(message)
+                    + "\n\n(My AI service is unavailable right now - "
+                      "check the Termux log for details.)")
+
+    # 3. Built-in fallback
+    return builtin_reply(message)
