@@ -64,10 +64,13 @@ except ImportError:
         return None
 
 try:
-    from ai.chemistry_ai import try_chemistry
+    from ai.chemistry_ai import try_chemistry, chemistry_context
 except ImportError:
     def try_chemistry(message: str):
         return None
+
+    def chemistry_context(message: str) -> str:
+        return ""
 
 
 # ------------------------------------------------------------
@@ -103,6 +106,10 @@ def build_messages(message: str, history: list) -> list:
     memory = get_memory_context()
     if memory:
         system += "\n\nWhat you know about the user:\n" + memory
+
+    chem = chemistry_context(message)
+    if chem:
+        system += "\n\n" + chem
 
     # The frontend already includes the newest user message in history.
     # Drop it so the model doesn't see the same message twice.
