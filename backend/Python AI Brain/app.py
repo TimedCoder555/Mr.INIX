@@ -23,11 +23,20 @@ from flask_cors import CORS
 
 
 # ------------------------------------------------------------
-# Settings (overridable with environment variables)
+# Settings: utils/config.py loads backend/.env and validates them.
+# The fallback keeps the server starting if that file is missing.
 # ------------------------------------------------------------
-HOST  = os.environ.get("MRINIX_HOST", "0.0.0.0")
-PORT  = int(os.environ.get("MRINIX_PORT", "5000"))
-DEBUG = os.environ.get("MRINIX_DEBUG", "1") == "1"
+try:
+    from utils.config import HOST, PORT, DEBUG, CORS_ORIGINS, startup_banner
+except ImportError:
+    HOST  = os.environ.get("MRINIX_HOST", "0.0.0.0")
+    PORT  = int(os.environ.get("MRINIX_PORT", "5000"))
+    DEBUG = os.environ.get("MRINIX_DEBUG", "0") == "1"
+    CORS_ORIGINS = "*"
+
+    def startup_banner() -> str:
+        return (f"Mr.INIX Flask Backend - http://{HOST}:{PORT}\n"
+                "(utils/config.py not found - using defaults)")
 
 # Blueprint modules to load: (module path, url prefix)
 # Each module must expose a Blueprint named `bp`.
@@ -46,7 +55,7 @@ def create_app() -> Flask:
     # --------------------------------------------------------
     # CORS - lets React (port 3000) call Flask (port 5000)
     # --------------------------------------------------------
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    CORS(app, resources={r"/*": {"origins": CORS_ORIGINS}})
 
     # --------------------------------------------------------
     # Database (optional until database/db.py exists)
@@ -126,9 +135,5 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    print("=" * 52)
-    print("  Mr.INIX Flask Backend")
-    print(f"  Listening on http://{HOST}:{PORT}")
-    print("  Find your LAN IP:  ip addr | grep 'inet 192'")
-    print("=" * 52)
+    print(startup_banner())
     app.run(host=HOST, port=PORT, debug=DEBUG)
