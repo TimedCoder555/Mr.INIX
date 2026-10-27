@@ -5,6 +5,7 @@ routes/chat.py calls:   get_reply(message, history) -> str
 
 Reply order
 -----------
+0. ai/memory.py        (optional)  "remember that ...", "forget ..." commands
 1. ai/chemistry_ai.py   (optional)  quick local chemistry answers
 2. A real AI model      (optional)  any OpenAI-compatible chat API
 3. Built-in replies     (always)    so the app never breaks
@@ -55,6 +56,12 @@ try:
 except ImportError:
     def get_memory_context() -> str:
         return ""
+
+try:
+    from ai.memory import try_memory_command
+except ImportError:
+    def try_memory_command(message: str):
+        return None
 
 try:
     from ai.chemistry_ai import try_chemistry
@@ -181,6 +188,11 @@ def builtin_reply(message: str) -> str:
 # ------------------------------------------------------------
 def get_reply(message: str, history: list = None) -> str:
     history = history or []
+
+    # 0. Memory commands: "remember that ...", "forget ...", "my name is ..."
+    memory_reply = try_memory_command(message)
+    if memory_reply:
+        return memory_reply
 
     # 1. Local chemistry shortcut (optional module)
     try:
