@@ -44,6 +44,14 @@ except ImportError:
         return f'You said: "{message}". My AI brain (ai/chatbot.py) is not connected yet.'
 
 
+# Optional chat history (database/db.py). Does nothing unless MRINIX_SAVE_CHATS=1.
+try:
+    from database.db import save_exchange
+except ImportError:
+    def save_exchange(user_message: str, ai_reply: str):
+        pass
+
+
 # ------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------
@@ -97,5 +105,7 @@ def chat():
         reply = "Sorry, I couldn't think of a reply. Please try again."
 
     print(f"[Mr.INIX] Reply -> {reply[:80]}")
+
+    save_exchange(message, reply)
 
     return jsonify({"reply": reply})
