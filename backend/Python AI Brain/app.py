@@ -102,6 +102,17 @@ def create_app() -> Flask:
         return response
 
     # --------------------------------------------------------
+    # Rate limits, body-size limit, safe headers (utils/security.py)
+    # Registered after the logging hooks so blocked requests are logged too.
+    # --------------------------------------------------------
+    try:
+        from utils.security import init_security
+        init_security(app)
+        print("[Mr.INIX] Security enabled")
+    except ImportError:
+        print("[Mr.INIX] utils/security.py not found - running without rate limits")
+
+    # --------------------------------------------------------
     # Health check - frontend checkHealth() calls GET /
     # --------------------------------------------------------
     @app.route("/", methods=["GET"])
