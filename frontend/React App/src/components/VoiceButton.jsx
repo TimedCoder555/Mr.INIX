@@ -13,13 +13,10 @@ import React, {
   useState, useEffect, useRef, useCallback
 } from "react";
 
-import { IsMicrophoneAvailable } from "../utils/helpers";
 import { VOICE, ERRORS }         from "../utils/constants";
 
 /* ── Icons ── */
-import { IoBulbOutline }    from "react-icons/io5";
 import { IoMicOutline }     from "react-icons/io5";
-import { IoMicOffOutline }  from "react-icons/io5";
 import { IoStopCircle }     from "react-icons/io5";
 
 
@@ -35,14 +32,15 @@ function useSpeechRecognition({ onTranscript, onStateChange }) {
   const recognitionRef = useRef(null);
   const autoStopRef    = useRef(null);
 
-  /* Check browser support once on mount */
+  /* Check browser support once on mount; stop recording on unmount */
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
     setIsSupported(!!SpeechRecognition);
 
     return () => {
-      stopListening();
+      clearTimeout(autoStopRef.current);
+      try { recognitionRef.current?.stop(); } catch { /* already stopped */ }
     };
   }, []);
 
