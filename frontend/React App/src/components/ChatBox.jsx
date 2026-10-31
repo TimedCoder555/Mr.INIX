@@ -17,8 +17,9 @@ import {
   isNearBottom,
   scrollToBottom,
   isBlank,
+  loadFromStorage,
 }                          from "../utils/helpers";
-import { CHAT, ERRORS }    from "../utils/constants";
+import { CHAT, ERRORS, STORAGE } from "../utils/constants";
 import { MiniLoader }      from "./Loader";
 import VoiceButton         from "./VoiceButton";
 import { ORB_STATE }       from "./FloatingOrb";
@@ -109,8 +110,10 @@ function EmptyState() {
    MAIN CHATBOX COMPONENT
    ══════════════════════════════════════════════════════════ */
 
+const BUBBLE_FONT = { small: "0.82rem", medium: "0.92rem", large: "1.05rem" };
+
 export default function ChatBox({ onOrbStateChange }) {
-  const { messages, setMessages, setIsOnline } = useApp();
+  const { messages, setMessages, setIsOnline, voiceEnabled } = useApp();
 
   const [input,       setInput]       = useState("");
   const [isTyping,    setIsTyping]    = useState(false);  // AI thinking
@@ -121,15 +124,30 @@ export default function ChatBox({ onOrbStateChange }) {
   const inputRef   = useRef(null);
   const seededRef  = useRef(false);   // guards the one-time "send pending message"
 
+  /* Display preferences from the Settings page (cheap localStorage reads) */
+  const autoScroll = loadFromStorage(STORAGE.AUTO_SCROLL, true) !== false;
+  const bubbleFont = BUBBLE_FONT[loadFromStorage(STORAGE.FONT_SIZE, "medium")] || BUBBLE_FONT.medium;
 
-  /* ── Auto-scroll when messages change ─────────────────── */
+
+  /* ── Open the chat at the newest message ─────────────── */
+  useEffect(() => {
+    // Wait one frame so the messages have their final height before scrolling
+    const frame = requestAnimationFrame(() => {
+      if (autoScroll) scrollToBottom(feedRef.current, false);
+    });
+    return () => cancelAnimationFrame(frame);
+    // Only when the chat opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── Auto-scroll when messages change (Settings > Auto-scroll) ── */
   useEffect(() => {
     const feed = feedRef.current;
-    if (!feed) return;
+    if (!feed || !autoScroll) return;
     if (isNearBottom(feed, CHAT.SCROLL_THRESHOLD_PX)) {
       scrollToBottom(feed);
     }
-  }, [messages, isTyping]);
+  }, [messages, isTyping, autoScroll]);
 
 
   /* ── Show/hide scroll-to-bottom button ────────────────── */
@@ -251,6 +269,7 @@ export default function ChatBox({ onOrbStateChange }) {
           className="chat-feed scroll-y"
           ref={feedRef}
           onScroll={handleFeedScroll}
+          style={{ "--bubble-font": bubbleFont }}
         >
           {!hasMessages && <EmptyState />}
 
@@ -323,11 +342,13 @@ export default function ChatBox({ onOrbStateChange }) {
           />
 
           {/* Voice button */}
-          <VoiceButton
-            onTranscript={handleVoiceTranscript}
-            onStateChange={handleVoiceStateChange}
-            disabled={isTyping}
-          />
+          {voiceEnabled && (
+            <VoiceButton
+              onTranscript={handleVoiceTranscript}
+              onStateChange={handleVoiceStateChange}
+              disabled={isTyping}
+            />
+          )}
 
           {/* Send button — shows when input has text */}
           {input.trim().length > 0 && (
