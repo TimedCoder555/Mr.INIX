@@ -9,13 +9,11 @@
    ============================================================ */
 
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate }  from "react-router-dom";
 import { useApp }       from "../App";
-import { STORAGE, APP, FLASK_IP, FLASK_PORT } from "../utils/constants";
+import { APP, FLASK_IP, FLASK_PORT } from "../utils/constants";
 import {
   saveToStorage,
   loadFromStorage,
-  clearAllStorage,
   capitalise,
 }                       from "../utils/helpers";
 import { checkHealth }  from "../utils/api";
@@ -26,10 +24,8 @@ import { IoPerson }              from "react-icons/io5";
 import { IoMicOutline }          from "react-icons/io5";
 import { IoTrashOutline }        from "react-icons/io5";
 import { IoServerOutline }       from "react-icons/io5";
-import { IoInformationCircle }   from "react-icons/io5";
 import { IoCheckmarkCircle }     from "react-icons/io5";
 import { IoAlertCircle }         from "react-icons/io5";
-import { IoChevronForward }      from "react-icons/io5";
 
 
 /* ══════════════════════════════════════════════════════════
@@ -116,7 +112,7 @@ export default function SettingsModal({ isOpen, onClose }) {
   const {
     userName, setUserName,
     voiceEnabled, setVoiceEnabled,
-    clearHistory, isOnline,
+    clearHistory, isOnline, setIsOnline,
   } = useApp();
 
   /* Local state for editable fields */
@@ -139,6 +135,8 @@ export default function SettingsModal({ isOpen, onClose }) {
       setSaved(false);
       setTimeout(() => nameRef.current?.focus(), 350);
     }
+    // Only re-run when the modal opens/closes (not when the name changes)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   /* Close on backdrop click */
@@ -167,6 +165,7 @@ export default function SettingsModal({ isOpen, onClose }) {
     setPinging(true);
     setPingStatus(null);
     const ok = await checkHealth();
+    setIsOnline(ok);
     setPingStatus(ok ? "ok" : "fail");
     setPinging(false);
   }
@@ -181,12 +180,6 @@ export default function SettingsModal({ isOpen, onClose }) {
     clearHistory();
     setConfirmClear(false);
     onClose();
-  }
-
-  /* ── Clear ALL data ── */
-  function handleClearAll() {
-    clearAllStorage();
-    window.location.reload();
   }
 
   if (!isOpen) return null;
