@@ -20,7 +20,7 @@ import Loader from "./components/Loader";
 import { checkHealth }                    from "./utils/api";
 import { loadUserName, loadChatHistory,
          saveChatHistory, saveUserName }   from "./utils/helpers";
-import { ROUTES, STORAGE }                from "./utils/constants";
+import { ROUTES }                         from "./utils/constants";
 
 
 /* ══════════════════════════════════════════════════════════
@@ -101,6 +101,7 @@ export default function App() {
     messages,
     setMessages,
     isOnline,
+    setIsOnline,
     voiceEnabled,
     setVoiceEnabled,
     clearHistory,
@@ -110,7 +111,7 @@ export default function App() {
   if (isLoading) {
     return (
       <div className="app-bg">
-        <Loader message="Starting Mr.INIX…" />
+        <Loader />
       </div>
     );
   }
