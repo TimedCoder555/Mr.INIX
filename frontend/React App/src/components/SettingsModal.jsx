@@ -10,10 +10,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useApp }       from "../App";
-import { APP, FLASK_IP, FLASK_PORT } from "../utils/constants";
+import { APP, FLASK_IP, FLASK_PORT, STORAGE } from "../utils/constants";
 import {
   saveToStorage,
   loadFromStorage,
+  removeFromStorage,
   capitalise,
 }                       from "../utils/helpers";
 import { checkHealth }  from "../utils/api";
@@ -118,7 +119,7 @@ export default function SettingsModal({ isOpen, onClose }) {
   /* Local state for editable fields */
   const [nameInput,   setNameInput]   = useState(userName);
   const [ipInput,     setIpInput]     = useState(
-    loadFromStorage("mrinix_custom_ip", `${FLASK_IP}:${FLASK_PORT}`)
+    loadFromStorage(STORAGE.CUSTOM_IP, "")
   );
   const [pingStatus,  setPingStatus]  = useState(null); // null | "ok" | "fail"
   const [pinging,     setPinging]     = useState(false);
@@ -155,7 +156,10 @@ export default function SettingsModal({ isOpen, onClose }) {
 
   /* ── Save custom IP ── */
   function handleSaveIP() {
-    saveToStorage("mrinix_custom_ip", ipInput.trim());
+    const value = ipInput.trim();
+    if (value) saveToStorage(STORAGE.CUSTOM_IP, value);
+    else       removeFromStorage(STORAGE.CUSTOM_IP);   // empty = use the proxy
+    checkHealth().then(setIsOnline);                       // refresh the Online badge
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -283,14 +287,14 @@ export default function SettingsModal({ isOpen, onClose }) {
           <SettingRow
             icon={<IoServerOutline size={16} />}
             label="Backend IP"
-            sublabel="Your Termux Flask server address"
+            sublabel="Optional. Leave empty to use the proxy"
           >
             <div style={s.inputRow}>
               <input
                 style={{ ...s.textInput, width: 130, fontSize: "0.78rem" }}
                 value={ipInput}
                 onChange={e => setIpInput(e.target.value)}
-                placeholder="192.0.0.4:5000"
+                placeholder={`${FLASK_IP}:${FLASK_PORT}`}
               />
               <button style={s.saveBtn} onClick={handleSaveIP}>
                 Save
