@@ -47,7 +47,10 @@ backend/
 │   └── security.py        rate limits, size limit, safe headers
 │
 └── database/
-    └── db.py              creates the SQLite files (chats.db, memory.db)
+    ├── db.py              creates the SQLite files below on first run
+    ├── chats.db           chat history (only used if MRINIX_SAVE_CHATS=1)
+    ├── memory.db          facts Mr.INIX remembers about you
+    └── users.db           unused placeholder (no login yet), safe to delete
 ```
 
 Every folder (`routes`, `ai`, `utils`, `database`) needs an **empty `__init__.py`** file so Python can import from it.
@@ -241,7 +244,9 @@ SQLite files are created automatically in `backend/database/`:
 - `memory.db`: facts Mr.INIX remembers about you.
 - `chats.db`: chat history. **Off by default** (your chats already live in the app). Turn on with `MRINIX_SAVE_CHATS=1`. The newest 5000 messages are kept.
 
-There is no `users.db` because the app has no login.
+`users.db` is not used by any code (the app has no login). You can keep the empty file or delete it.
+
+> ⚠️ The `.db` files contain your personal chats and memories. **Never commit them to GitHub.** The project `.gitignore` excludes `*.db`. If they are already uploaded, delete them from the repo (on GitHub, or `git rm --cached backend/database/*.db` then commit). The app recreates them automatically.
 
 ---
 
