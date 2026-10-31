@@ -24,7 +24,7 @@ export const ORB_STATE = {
    MAIN COMPONENT
    ══════════════════════════════════════════════════════════ */
 
-export default function FloatingOrb({ orbState = ORB_STATE.IDLE, onClick }) {
+export default function FloatingOrb({ orbState = ORB_STATE.IDLE, onClick, compact = false }) {
   const { isOnline } = useApp();
   const [blinkKey, setBlinkKey]   = useState(0);  // force re-trigger blink
   const blinkRef  = useRef(null);
@@ -52,7 +52,7 @@ export default function FloatingOrb({ orbState = ORB_STATE.IDLE, onClick }) {
   const shadowStyle = getShadowStyle(orbState);
   const wrapAnim    = getWrapAnimation(orbState);
 
-  return (
+  const orb = (
     <div style={s.container} onClick={onClick}>
 
       {/* Outer glow ring */}
@@ -109,13 +109,24 @@ export default function FloatingOrb({ orbState = ORB_STATE.IDLE, onClick }) {
         <div style={{ ...s.shadow, ...shadowStyle }} />
       </div>
 
-      {/* State label below orb */}
-      <div style={s.stateLabel}>
-        {getStateLabel(orbState, isOnline)}
-      </div>
+      {/* State label below orb (hidden in compact mode) */}
+      {!compact && (
+        <div style={s.stateLabel}>
+          {getStateLabel(orbState, isOnline)}
+        </div>
+      )}
 
       {/* Injected keyframes */}
       <style>{KEYFRAMES}</style>
+    </div>
+  );
+
+  if (!compact) return orb;
+
+  /* Compact: half size. transform does not change layout, so the wrapper sets the real height. */
+  return (
+    <div style={s.compactWrap}>
+      <div style={s.compactInner}>{orb}</div>
     </div>
   );
 }
@@ -223,6 +234,20 @@ function getStateLabel(state, isOnline) {
    ══════════════════════════════════════════════════════════ */
 
 const s = {
+  compactWrap: {
+    height:         92,
+    display:        "flex",
+    justifyContent: "center",
+    alignItems:     "flex-start",
+    width:          "100%",
+  },
+
+  compactInner: {
+    transform:       "scale(0.5)",
+    transformOrigin: "top center",
+    paddingTop:      20,
+  },
+
   container: {
     display:        "flex",
     flexDirection:  "column",
