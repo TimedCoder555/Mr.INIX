@@ -19,8 +19,9 @@ import Loader from "./components/Loader";
 /* ── Utils ── */
 import { checkHealth }                    from "./utils/api";
 import { loadUserName, loadChatHistory,
-         saveChatHistory, saveUserName }   from "./utils/helpers";
-import { ROUTES }                         from "./utils/constants";
+         saveChatHistory, saveUserName,
+         loadFromStorage, saveToStorage }  from "./utils/helpers";
+import { ROUTES, STORAGE }                from "./utils/constants";
 
 
 /* ══════════════════════════════════════════════════════════
@@ -53,7 +54,9 @@ export default function App() {
   const [messages,    setMessages]      = useState(() => loadChatHistory());
   const [isLoading,   setIsLoading]     = useState(true);   // startup check
   const [isOnline,    setIsOnline]      = useState(false);  // Flask reachable?
-  const [voiceEnabled,setVoiceEnabled]  = useState(false);
+  const [voiceEnabled, setVoiceEnabledState] = useState(
+    () => loadFromStorage(STORAGE.VOICE_ENABLED, true)   // mic is on by default
+  );
 
   /* ── Startup: health-check Flask ─────────────────────── */
   useEffect(() => {
@@ -87,6 +90,12 @@ export default function App() {
   function setUserName(name) {
     setUserNameState(name);
     saveUserName(name);
+  }
+
+  /* ── Voice toggle that also persists ─────────────────── */
+  function setVoiceEnabled(value) {
+    setVoiceEnabledState(value);
+    saveToStorage(STORAGE.VOICE_ENABLED, value);
   }
 
   /* ── Clear all chat history ──────────────────────────── */
