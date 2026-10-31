@@ -51,7 +51,10 @@ async function apiFetch(endpoint, options = {}, retries = API.RETRY_COUNT) {
         errorMsg = errData.error || errData.message || ERRORS.SERVER;
       } catch {
         // response body wasn't JSON — use status text
-        errorMsg = `Server error ${response.status}: ${response.statusText}`;
+        // Not JSON: usually the dev-server proxy saying Flask is not running
+        errorMsg = response.status >= 500
+          ? ERRORS.NETWORK
+          : `Server error ${response.status}: ${response.statusText}`;
       }
       throw new APIError(errorMsg, response.status, false); // don't retry 4xx/5xx
     }
@@ -121,20 +124,27 @@ class APIError extends Error {
  * @returns {Promise<boolean>} true if reachable
  */
 export async function checkHealth() {
+  // Short timeout and no retries: this runs while the loader is on screen.
+  const viaProxy = await ping(`${API.BASE_URL}${API.ENDPOINTS.HEALTH}`);
+  if (viaProxy) return true;
+  return ping(`${API.FALLBACK_URL}${API.ENDPOINTS.HEALTH}`);   // direct Flask address
+}
+
+/** GET a URL and report whether it answered OK within `ms` milliseconds */
+async function ping(url, ms = 3000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
   try {
-    await apiFetch(API.ENDPOINTS.HEALTH, { method: "GET" });
-    return true;
+    const res = await fetch(url, {
+      method:  "GET",
+      headers: { Accept: "application/json" },
+      signal:  controller.signal,
+    });
+    return res.ok;
   } catch {
-    // Try direct IP fallback
-    try {
-      const res = await fetch(
-        `${API.FALLBACK_URL}${API.ENDPOINTS.HEALTH}`,
-        { method: "GET" }
-      );
-      return res.ok;
-    } catch {
-      return false;
-    }
+    return false;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
