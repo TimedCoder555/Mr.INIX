@@ -15,12 +15,13 @@ import { checkHealth }  from "../utils/api";
 import {
   saveToStorage,
   loadFromStorage,
+  removeFromStorage,
   clearAllStorage,
   capitalise,
 }                       from "../utils/helpers";
 import {
   APP, FLASK_IP, FLASK_PORT,
-  ROUTES,
+  ROUTES, STORAGE,
 }                       from "../utils/constants";
 
 /* ── Icons ── */
@@ -29,7 +30,6 @@ import { IoMicOutline }          from "react-icons/io5";
 import { IoTrashOutline }        from "react-icons/io5";
 import { IoServerOutline }       from "react-icons/io5";
 import { IoColorPaletteOutline } from "react-icons/io5";
-import { IoNotificationsOutline }from "react-icons/io5";
 import { IoShieldOutline }       from "react-icons/io5";
 import { IoCheckmarkCircle }     from "react-icons/io5";
 import { IoAlertCircle }         from "react-icons/io5";
@@ -110,7 +110,7 @@ export default function Settings() {
   /* ── Local state ── */
   const [nameInput,     setNameInput]     = useState(userName);
   const [ipInput,       setIpInput]       = useState(
-    loadFromStorage("mrinix_custom_ip", `${FLASK_IP}:${FLASK_PORT}`)
+    loadFromStorage(STORAGE.CUSTOM_IP, "")
   );
   const [pingStatus,    setPingStatus]    = useState(null);
   const [pinging,       setPinging]       = useState(false);
@@ -118,14 +118,11 @@ export default function Settings() {
   const [savedIP,       setSavedIP]       = useState(false);
   const [confirmClear,  setConfirmClear]  = useState(false);
   const [confirmReset,  setConfirmReset]  = useState(false);
-  const [soundEnabled,  setSoundEnabled]  = useState(
-    loadFromStorage("mrinix_sound", true)
-  );
   const [autoScroll,    setAutoScroll]    = useState(
-    loadFromStorage("mrinix_autoscroll", true)
+    loadFromStorage(STORAGE.AUTO_SCROLL, true)
   );
   const [fontSize,      setFontSize]      = useState(
-    loadFromStorage("mrinix_fontsize", "medium")
+    loadFromStorage(STORAGE.FONT_SIZE, "medium")
   );
   const nameRef = useRef(null);
 
@@ -144,7 +141,10 @@ export default function Settings() {
   }
 
   function handleSaveIP() {
-    saveToStorage("mrinix_custom_ip", ipInput.trim());
+    const value = ipInput.trim();
+    if (value) saveToStorage(STORAGE.CUSTOM_IP, value);
+    else       removeFromStorage(STORAGE.CUSTOM_IP);   // empty = use the proxy
+    checkHealth().then(setIsOnline);                       // refresh the Online badge
     setSavedIP(true);
     setTimeout(() => setSavedIP(false), 2500);
   }
@@ -158,19 +158,14 @@ export default function Settings() {
     setPinging(false);
   }
 
-  function handleSoundToggle(val) {
-    setSoundEnabled(val);
-    saveToStorage("mrinix_sound", val);
-  }
-
   function handleAutoScrollToggle(val) {
     setAutoScroll(val);
-    saveToStorage("mrinix_autoscroll", val);
+    saveToStorage(STORAGE.AUTO_SCROLL, val);
   }
 
   function handleFontSize(size) {
     setFontSize(size);
-    saveToStorage("mrinix_fontsize", size);
+    saveToStorage(STORAGE.FONT_SIZE, size);
   }
 
   function handleClearHistory() {
@@ -240,26 +235,18 @@ export default function Settings() {
 
 
         {/* ─────────────────────────────────────
-            SECTION 2 — VOICE & SOUND
+            SECTION 2 — VOICE
             ───────────────────────────────────── */}
         <div className="glass" style={s.card}>
-          <SectionHeader title="🎤  VOICE & SOUND" />
+          <SectionHeader title="🎤  VOICE" />
 
           <SettingRow
             icon={<IoMicOutline size={16} />}
             label="Voice Input"
-            sublabel="Use microphone to speak messages"
-          >
-            <Toggle value={voiceEnabled} onChange={setVoiceEnabled} />
-          </SettingRow>
-
-          <SettingRow
-            icon={<IoNotificationsOutline size={16} />}
-            label="Sound Effects"
-            sublabel="Play sounds on send / receive"
+            sublabel="Show the microphone button"
             last
           >
-            <Toggle value={soundEnabled} onChange={handleSoundToggle} />
+            <Toggle value={voiceEnabled} onChange={setVoiceEnabled} />
           </SettingRow>
         </div>
 
@@ -348,7 +335,7 @@ export default function Settings() {
           <SettingRow
             icon={<IoServerOutline size={16} />}
             label="Flask Server IP"
-            sublabel={`Default: ${FLASK_IP}:${FLASK_PORT}  (your Termux IP)`}
+            sublabel="Optional. Leave empty to use the proxy from package.json"
           >
             <div style={s.inputGroup}>
               <input
