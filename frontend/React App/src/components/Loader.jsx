@@ -14,15 +14,15 @@ import React, { useEffect, useState } from "react";
       Displays animated orb + pulsing dots + status message.
    ══════════════════════════════════════════════════════════ */
 
-export default function Loader({ message = "Starting Mr.INIX…" }) {
+/* Status messages that cycle while the app starts */
+const STEPS = [
+  "Starting Mr.INIX…",
+  "Connecting to AI Brain…",
+  "Loading your assistant…",
+  "Almost ready…",
+];
 
-  /* Cycle through status messages so it feels alive */
-  const steps = [
-    "Starting Mr.INIX…",
-    "Connecting to AI Brain…",
-    "Loading your assistant…",
-    "Almost ready…",
-  ];
+export default function Loader({ message }) {
 
   const [stepIndex, setStepIndex] = useState(0);
   const [visible,   setVisible]   = useState(true);
@@ -32,7 +32,7 @@ export default function Loader({ message = "Starting Mr.INIX…" }) {
       /* Fade out → change text → fade in */
       setVisible(false);
       setTimeout(() => {
-        setStepIndex(i => (i + 1) % steps.length);
+        setStepIndex(i => (i + 1) % STEPS.length);
         setVisible(true);
       }, 300);
     }, 1800);
@@ -77,7 +77,7 @@ export default function Loader({ message = "Starting Mr.INIX…" }) {
         opacity:   visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(6px)",
       }}>
-        {message || steps[stepIndex]}
+        {message || STEPS[stepIndex]}
       </div>
 
       {/* Keyframes injected inline */}
