@@ -12,7 +12,7 @@ import React, { useState, useRef } from "react";
 import { useNavigate }              from "react-router-dom";
 
 import { useApp }           from "../App";
-import { buildGreeting }    from "../utils/helpers";
+import { buildGreeting, createMessage } from "../utils/helpers";
 import { ROUTES, CHAT }     from "../utils/constants";
 
 import Navbar               from "../components/Navbar";
@@ -48,8 +48,8 @@ export default function Home() {
   /* ── Navigate to chat with optional seed text ── */
   function goToChat(seedText = "") {
     if (seedText.trim()) {
-      const { createMessage } = require("../utils/helpers");
-      setMessages([{ ...createMessage("user", seedText), _sent: true }]);
+      /* _pending tells ChatBox to send this message as soon as it opens */
+      setMessages(prev => [...prev, { ...createMessage("user", seedText), _pending: true }]);
     }
     navigate(ROUTES.CHAT);
   }
