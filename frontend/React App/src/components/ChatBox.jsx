@@ -110,7 +110,7 @@ function EmptyState() {
    ══════════════════════════════════════════════════════════ */
 
 export default function ChatBox({ onOrbStateChange }) {
-  const { messages, setMessages, isOnline } = useApp();
+  const { messages, setMessages, setIsOnline } = useApp();
 
   const [input,       setInput]       = useState("");
   const [isTyping,    setIsTyping]    = useState(false);  // AI thinking
@@ -119,7 +119,7 @@ export default function ChatBox({ onOrbStateChange }) {
 
   const feedRef    = useRef(null);
   const inputRef   = useRef(null);
-  const typingTimer= useRef(null);
+  const seededRef  = useRef(false);   // guards the one-time "send pending message"
 
 
   /* ── Auto-scroll when messages change ─────────────────── */
@@ -140,56 +140,45 @@ export default function ChatBox({ onOrbStateChange }) {
   }
 
 
-  /* ── Send seeded message from SuggestionCards ─────────── */
-  useEffect(() => {
-    const last = messages[messages.length - 1];
-    if (
-      messages.length === 1 &&
-      last?.role === CHAT.ROLES.USER &&
-      !last?._sent
-    ) {
-      /* Mark as sent so we don't re-trigger */
-      setMessages(prev =>
-        prev.map((m, i) =>
-          i === prev.length - 1 ? { ...m, _sent: true } : m
-        )
-      );
-      sendToBackend(last.text, messages);
-    }
-  }, []); // runs once on mount
+  /* ── Append a message to state ─────────────────────────── */
+  const appendMessage = useCallback((role, text) => {
+    setMessages(prev => [...prev, createMessage(role, text)]);
+  }, [setMessages]);
 
 
   /* ── Core send function ────────────────────────────────── */
   const sendToBackend = useCallback(async (text, currentMessages) => {
-    if (!isOnline) {
-      appendMessage("assistant", ERRORS.NETWORK);
-      return;
-    }
-
-    /* Show orb thinking */
     onOrbStateChange?.(ORB_STATE.THINKING);
     setIsTyping(true);
 
-    /* Delay so typing indicator renders first */
-    typingTimer.current = setTimeout(async () => {
-      try {
-        const reply = await sendChat(text, currentMessages);
-        appendMessage("assistant", reply);
-        onOrbStateChange?.(ORB_STATE.IDLE);
-      } catch (err) {
-        appendMessage("assistant", err.message || ERRORS.UNKNOWN);
-        onOrbStateChange?.(ORB_STATE.IDLE);
-      } finally {
-        setIsTyping(false);
-      }
-    }, CHAT.TYPING_DELAY_MS);
-  }, [isOnline, onOrbStateChange]);
+    try {
+      const reply = await sendChat(text, currentMessages);
+      setIsOnline(true);
+      appendMessage("assistant", reply);
+    } catch (err) {
+      if (err.status === 0) setIsOnline(false);   // network failure / timeout
+      appendMessage("assistant", err.message || ERRORS.UNKNOWN);
+    } finally {
+      onOrbStateChange?.(ORB_STATE.IDLE);
+      setIsTyping(false);
+    }
+  }, [appendMessage, onOrbStateChange, setIsOnline]);
 
 
-  /* ── Append a message to state ─────────────────────────── */
-  function appendMessage(role, text) {
-    setMessages(prev => [...prev, createMessage(role, text)]);
-  }
+  /* ── Send the message waiting from Home / a suggestion card ── */
+  useEffect(() => {
+    if (seededRef.current) return;            // React StrictMode runs effects twice in dev
+    const last = messages[messages.length - 1];
+    if (last?.role === CHAT.ROLES.USER && last?._pending) {
+      seededRef.current = true;
+      setMessages(prev =>
+        prev.map((m, i) => (i === prev.length - 1 ? { ...m, _pending: false } : m))
+      );
+      sendToBackend(last.text, messages);
+    }
+    // Run once when the chat opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   /* ── Handle send button / Enter key ───────────────────── */
@@ -199,12 +188,12 @@ export default function ChatBox({ onOrbStateChange }) {
     if (text.length > CHAT.MAX_INPUT_LENGTH) return;
 
     const userMsg = createMessage("user", text);
-    const updated = [...messages, { ...userMsg, _sent: true }];
+    const updated = [...messages, userMsg];
 
     setMessages(updated);
     setInput("");
     setCharCount(0);
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
 
     await sendToBackend(text, updated);
   }
@@ -232,7 +221,7 @@ export default function ChatBox({ onOrbStateChange }) {
   function handleVoiceTranscript(transcript) {
     setInput(transcript);
     setCharCount(transcript.length);
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
   }
 
 
@@ -242,12 +231,6 @@ export default function ChatBox({ onOrbStateChange }) {
       isListening ? ORB_STATE.LISTENING : ORB_STATE.IDLE
     );
   }
-
-
-  /* ── Cleanup on unmount ────────────────────────────────── */
-  useEffect(() => {
-    return () => clearTimeout(typingTimer.current);
-  }, []);
 
 
   /* ── Group messages by date for separators ─────────────── */
