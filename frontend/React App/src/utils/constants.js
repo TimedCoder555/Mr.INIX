@@ -183,6 +183,9 @@ export const STORAGE = {
   CHAT_HISTORY: "mrinix_chat_history",
   SETTINGS:     "mrinix_settings",
   VOICE_ENABLED:"mrinix_voice_enabled",
+  CUSTOM_IP:    "mrinix_custom_ip",      // optional Flask address typed in Settings
+  FONT_SIZE:    "mrinix_fontsize",       // "small" | "medium" | "large"
+  AUTO_SCROLL:  "mrinix_autoscroll",     // true | false
 };
 
 
