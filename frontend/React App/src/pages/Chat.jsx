@@ -30,6 +30,7 @@ export default function Chat() {
       {/* ── Mini orb header strip ── */}
       <div style={s.orbStrip} className="glass-light">
         <FloatingOrb
+          compact
           orbState={orbState}
           onClick={() => {/* orb tap in chat does nothing */}}
         />
@@ -75,11 +76,6 @@ const s = {
     flexShrink:     0,
     borderBottom:   "1px solid rgba(255,255,255,0.45)",
 
-    /* Override FloatingOrb default sizes to compact version */
-    "& .orb": {
-      width:  72,
-      height: 72,
-    },
   },
 
   /* ChatBox takes remaining vertical space */
