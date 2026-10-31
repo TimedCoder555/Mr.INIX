@@ -17,11 +17,10 @@ import {
   loadFromStorage,
   clearAllStorage,
   capitalise,
-  loadUserName,
 }                       from "../utils/helpers";
 import {
   APP, FLASK_IP, FLASK_PORT,
-  STORAGE, ROUTES, VOICE,
+  ROUTES,
 }                       from "../utils/constants";
 
 /* ── Icons ── */
@@ -95,15 +94,6 @@ function Toggle({ value, onChange }) {
   );
 }
 
-function SavedBadge({ show }) {
-  if (!show) return null;
-  return (
-    <span style={s.savedBadge}>
-      <IoCheckmarkCircle size={13} /> Saved
-    </span>
-  );
-}
-
 
 /* ══════════════════════════════════════════════════════════
    SETTINGS PAGE
@@ -114,7 +104,7 @@ export default function Settings() {
   const {
     userName, setUserName,
     voiceEnabled, setVoiceEnabled,
-    clearHistory, isOnline,
+    clearHistory, isOnline, setIsOnline,
   } = useApp();
 
   /* ── Local state ── */
@@ -163,6 +153,7 @@ export default function Settings() {
     setPinging(true);
     setPingStatus(null);
     const ok = await checkHealth();
+    setIsOnline(ok);
     setPingStatus(ok ? "ok" : "fail");
     setPinging(false);
   }
