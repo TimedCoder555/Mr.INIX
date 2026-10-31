@@ -1,312 +1,265 @@
-/* =========================
-   GOOGLE FONT
-========================= */
+/* ============================================================
+   global.css  —  Mr.INIX Base Styles
+   The gradient background, typography, resets, and utilities
+   that every page inherits.
+   ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+/* ── Google Fonts already loaded in index.html ── */
 
-/* =========================
-   RESET
-========================= */
+/* ── CSS Variables ───────────────────────────────────────── */
+:root {
+  /* Brand palette — pulled directly from the screenshot */
+  --color-bg-start:     #dcd6f7;   /* soft lavender top-left  */
+  --color-bg-mid:       #e8d5f5;   /* pink-lilac centre       */
+  --color-bg-end:       #f0e6ff;   /* near-white bottom       */
+  --color-pink-blob:    #f5c6e8;   /* right pink orb          */
+  --color-blue-blob:    #c8d8f8;   /* left blue orb           */
 
-* {
+  /* Orb / accent */
+  --color-orb-start:    #9b59d0;
+  --color-orb-end:      #6a3de8;
+  --color-orb-glow:     rgba(155, 89, 208, 0.45);
+
+  /* Text */
+  --color-text-primary:   #3b2f6b;
+  --color-text-secondary: #7b6fa0;
+  --color-text-muted:     #a99fcb;
+  --color-text-white:     #ffffff;
+
+  /* Glass card */
+  --glass-bg:           rgba(255, 255, 255, 0.45);
+  --glass-border:       rgba(255, 255, 255, 0.70);
+  --glass-shadow:       0 8px 32px rgba(139, 100, 220, 0.12);
+  --glass-blur:         blur(18px);
+
+  /* Input bar */
+  --input-bg:           rgba(255, 255, 255, 0.60);
+  --input-border:       rgba(255, 255, 255, 0.80);
+  --input-shadow:       0 4px 20px rgba(139, 100, 220, 0.10);
+
+  /* Suggestion cards */
+  --card-bg:            rgba(255, 255, 255, 0.50);
+  --card-border:        rgba(255, 255, 255, 0.75);
+  --card-hover-bg:      rgba(255, 255, 255, 0.70);
+
+  /* Purple accent button (mic) */
+  --btn-primary-bg:     linear-gradient(135deg, #a78bfa, #7c3aed);
+  --btn-primary-shadow: 0 4px 20px rgba(124, 58, 237, 0.40);
+
+  /* Spacing scale */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-2xl: 48px;
+
+  /* Border radius */
+  --radius-sm:   10px;
+  --radius-md:   18px;
+  --radius-lg:   24px;
+  --radius-full: 9999px;
+
+  /* Font families */
+  --font-display: 'Outfit', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  /* Transitions */
+  --transition-fast:   0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow:   0.4s ease;
+
+  /* Z-index layers */
+  --z-bg:       0;
+  --z-content:  10;
+  --z-card:     20;
+  --z-nav:      50;
+  --z-modal:    100;
+  --z-toast:    200;
+}
+
+/* ── Hard Reset ──────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* =========================
-   BODY
-========================= */
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  height: 100%;
+  /* Prevent iOS bounce / rubber-band on the html element */
+  overscroll-behavior: none;
+}
 
 body {
-  font-family: 'Poppins', sans-serif;
-
-  background: #050816;
-
-  color: white;
-
-  overflow-x: hidden;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  background: var(--color-bg-end);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent text size auto-adjust on mobile rotation */
+  -webkit-text-size-adjust: 100%;
 }
-
-/* =========================
-   ROOT
-========================= */
 
 #root {
-  min-height: 100vh;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
 }
 
-/* =========================
-   APP
-========================= */
-
-.app {
-  min-height: 100vh;
+/* ── Typography ──────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.25;
 }
 
-/* =========================
-   LINKS
-========================= */
+h1 { font-size: clamp(1.6rem, 5vw, 2.2rem); }
+h2 { font-size: clamp(1.3rem, 4vw, 1.7rem); }
+h3 { font-size: clamp(1.1rem, 3vw, 1.3rem); }
 
-a {
-  text-decoration: none;
-  color: inherit;
+p {
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
 }
-
-/* =========================
-   BUTTONS
-========================= */
 
 button {
-  font-family: inherit;
-}
-
-/* =========================
-   IMAGES
-========================= */
-
-img {
-  max-width: 100%;
-  display: block;
-}
-
-/* =========================
-   NAVBAR
-========================= */
-
-.navbar {
-  width: 100%;
-
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  padding: 15px 25px;
-
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-
-  background: rgba(10, 15, 30, 0.7);
-
-  backdrop-filter: blur(15px);
-}
-
-.navbar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.navbar-logo {
-  width: 50px;
-  height: 50px;
-
-  border-radius: 50%;
-}
-
-.navbar-title {
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.navbar-subtitle {
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-/* =========================
-   HERO
-========================= */
-
-.hero {
-  min-height: 60vh;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  text-align: center;
-
-  padding: 40px 20px;
-}
-
-.hero-content {
-  max-width: 800px;
-}
-
-.hero-title {
-  font-size: 52px;
-  font-weight: 800;
-
-  margin-bottom: 20px;
-}
-
-.hero-title span {
-  color: #00e5ff;
-}
-
-.hero-description {
-  font-size: 18px;
-
-  color: #cbd5e1;
-
-  line-height: 1.8;
-
-  margin-bottom: 30px;
-}
-
-/* =========================
-   HERO BUTTONS
-========================= */
-
-.hero-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-
-  flex-wrap: wrap;
-}
-
-.primary-btn {
+  font-family: var(--font-body);
+  cursor: pointer;
   border: none;
-
-  padding: 14px 24px;
-
-  border-radius: 14px;
-
-  cursor: pointer;
-
-  color: white;
-
-  background: linear-gradient(
-    135deg,
-    #00e5ff,
-    #7b2cff
-  );
+  background: none;
+  outline: none;
 }
 
-.secondary-btn {
-  border: 1px solid rgba(255,255,255,0.2);
-
-  padding: 14px 24px;
-
-  border-radius: 14px;
-
-  cursor: pointer;
-
-  color: white;
-
-  background: transparent;
+input, textarea {
+  font-family: var(--font-body);
+  outline: none;
+  border: none;
+  background: none;
 }
 
-/* =========================
-   HOME PAGE
-========================= */
-
-.home-page {
-  padding-bottom: 50px;
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-/* =========================
-   SETTINGS
-========================= */
-
-.settings-page {
-  max-width: 800px;
-
-  margin: auto;
-
-  padding: 30px 20px;
+/* ── Gradient Background ─────────────────────────────────── */
+/* Applied to the main app wrapper in App.js */
+.app-bg {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overflow: clip;   /* clip (unlike hidden) can never be scrolled by focus() */
+  /* Multi-stop gradient matching screenshot */
+  background: radial-gradient(
+      ellipse 80% 60% at 15% 10%,
+      var(--color-blue-blob) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 70% 55% at 85% 20%,
+      var(--color-pink-blob) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 90% 80% at 50% 80%,
+      var(--color-bg-mid) 0%,
+      transparent 70%
+    ),
+    linear-gradient(
+      160deg,
+      var(--color-bg-start) 0%,
+      var(--color-bg-mid)   50%,
+      var(--color-bg-end)   100%
+    );
 }
 
-.settings-card {
-  margin-top: 20px;
-
-  background: rgba(255,255,255,0.05);
-
-  border-radius: 20px;
-
-  padding: 20px;
+/* Floating blob decorations (pure CSS, no images needed) */
+.app-bg::before,
+.app-bg::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: var(--z-bg);
+  filter: blur(60px);
+  opacity: 0.55;
 }
 
-.setting-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  margin-bottom: 20px;
+/* Top-left blue blob */
+.app-bg::before {
+  width: 340px;
+  height: 340px;
+  top: -80px;
+  left: -80px;
+  background: radial-gradient(circle, #b8ccf8 0%, transparent 70%);
+  animation: blobDrift1 12s ease-in-out infinite alternate;
 }
 
-/* =========================
-   ABOUT PAGE
-========================= */
-
-.about-page {
-  max-width: 900px;
-
-  margin: auto;
-
-  padding: 30px 20px;
+/* Bottom-right pink blob */
+.app-bg::after {
+  width: 380px;
+  height: 380px;
+  bottom: -100px;
+  right: -80px;
+  background: radial-gradient(circle, #f5c0e8 0%, transparent 70%);
+  animation: blobDrift2 14s ease-in-out infinite alternate;
 }
 
-.about-card {
-  background: rgba(255,255,255,0.05);
-
-  border-radius: 24px;
-
-  padding: 25px;
+@keyframes blobDrift1 {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(30px, 40px) scale(1.08); }
 }
 
-.about-card h1,
-.about-card h3 {
-  margin-bottom: 15px;
+@keyframes blobDrift2 {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-25px, -35px) scale(1.06); }
 }
 
-.about-card p,
-.about-card li {
-  color: #cbd5e1;
-
-  line-height: 1.8;
+/* ── Scrollable inner areas ──────────────────────────────── */
+.scroll-y {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.scroll-y::-webkit-scrollbar { display: none; }
 
-/* =========================
-   SCROLLBAR
-========================= */
+/* ── Utility classes ─────────────────────────────────────── */
+.flex         { display: flex; }
+.flex-col     { display: flex; flex-direction: column; }
+.flex-center  { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.flex-gap-sm  { gap: var(--space-sm); }
+.flex-gap-md  { gap: var(--space-md); }
 
-::-webkit-scrollbar {
-  width: 8px;
-}
+.text-center  { text-align: center; }
+.text-muted   { color: var(--color-text-muted); }
+.text-white   { color: var(--color-text-white); }
 
-::-webkit-scrollbar-track {
-  background: #0f172a;
-}
+.w-full  { width: 100%; }
+.h-full  { height: 100%; }
+.p-md    { padding: var(--space-md); }
+.p-lg    { padding: var(--space-lg); }
+.mt-sm   { margin-top: var(--space-sm); }
+.mt-md   { margin-top: var(--space-md); }
+.mt-lg   { margin-top: var(--space-lg); }
 
-::-webkit-scrollbar-thumb {
-  background: #00e5ff;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #7b2cff;
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 768px) {
-
-  .hero-title {
-    font-size: 36px;
-  }
-
-  .hero-description {
-    font-size: 15px;
-  }
-
-  .navbar-title {
-    font-size: 18px;
-  }
-
+/* ── Focus visible (accessibility) ──────────────────────── */
+:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
 }
