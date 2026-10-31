@@ -4,8 +4,21 @@
    fetch() directly — they always call these functions.
    ============================================================ */
 
-import { API, ERRORS } from "./constants";
-import { trimHistory } from "./helpers";
+import { API, ERRORS, STORAGE } from "./constants";
+import { trimHistory, loadFromStorage } from "./helpers";
+
+/**
+ * Where to send requests.
+ * Empty (default) = relative URLs, so the dev-server proxy in package.json
+ * forwards them to Flask. If you typed a Flask address in Settings, use it directly.
+ */
+export function getBaseUrl() {
+  const custom = loadFromStorage(STORAGE.CUSTOM_IP, "");
+  if (typeof custom !== "string" || !custom.trim()) return API.BASE_URL;
+  let url = custom.trim().replace(/\/+$/, "");
+  if (!/^https?:\/\//i.test(url)) url = `http://${url}`;
+  return url;
+}
 
 
 /* ══════════════════════════════════════════════════════════
@@ -24,7 +37,7 @@ import { trimHistory } from "./helpers";
 async function apiFetch(endpoint, options = {}, retries = API.RETRY_COUNT) {
   // Build URL — CRA proxy handles routing to Flask when BASE_URL is ""
   // Falls back to direct Flask IP if proxy is not available
-  const url = `${API.BASE_URL}${endpoint}`;
+  const url = `${getBaseUrl()}${endpoint}`;
 
   // Attach timeout via AbortController
   const controller = new AbortController();
@@ -125,7 +138,7 @@ class APIError extends Error {
  */
 export async function checkHealth() {
   // Short timeout and no retries: this runs while the loader is on screen.
-  const viaProxy = await ping(`${API.BASE_URL}${API.ENDPOINTS.HEALTH}`);
+  const viaProxy = await ping(`${getBaseUrl()}${API.ENDPOINTS.HEALTH}`);
   if (viaProxy) return true;
   return ping(`${API.FALLBACK_URL}${API.ENDPOINTS.HEALTH}`);   // direct Flask address
 }
@@ -240,7 +253,7 @@ export async function transcribeVoice(audioBlob) {
 
   try {
     const response = await fetch(
-      `${API.BASE_URL}${API.ENDPOINTS.VOICE}`,
+      `${getBaseUrl()}${API.ENDPOINTS.VOICE}`,
       {
         method: "POST",
         body:   formData,
