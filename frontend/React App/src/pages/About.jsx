@@ -19,7 +19,7 @@ import { IoLanguageOutline } from "react-icons/io5";
 import { IoFlashOutline }    from "react-icons/io5";
 import { IoLogoGithub }      from "react-icons/io5";
 import { IoRocketOutline }   from "react-icons/io5";
-import { IoBrainOutline }    from "react-icons/io5";
+import { IoBulbOutline }    from "react-icons/io5";
 
 
 /* ══════════════════════════════════════════════════════════
@@ -102,7 +102,7 @@ export default function About() {
       delay: "0.25s",
     },
     {
-      icon:  <IoBrainOutline size={18} color="#fff" />,
+      icon:  <IoBulbOutline size={18} color="#fff" />,
       title: "AI Memory",
       desc:  "Remembers context across your conversation session",
       color: "linear-gradient(135deg,#c084fc,#9333ea)",
@@ -208,7 +208,7 @@ export default function About() {
         {/* ── Architecture ── */}
         <div style={s.section}>
           <div style={s.sectionHeader}>
-            <IoBrainOutline size={16} color="#a78bfa" />
+            <IoBulbOutline size={16} color="#a78bfa" />
             <span style={s.sectionTitle}>Architecture</span>
           </div>
           <div
