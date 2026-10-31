@@ -9,7 +9,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { RxHamburgerMenu }  from "react-icons/rx";
 import { IoSettingsOutline } from "react-icons/io5";
 import { IoArrowBack }       from "react-icons/io5";
-import { IoInformationCircleOutline } from "react-icons/io5";
 
 import { useApp }   from "../App";
 import { ROUTES }   from "../utils/constants";
