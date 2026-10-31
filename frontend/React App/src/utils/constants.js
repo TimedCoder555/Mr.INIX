@@ -47,8 +47,8 @@ export const API = {
   },
 
   // Request config
-  TIMEOUT_MS:   15000,   // 15 seconds before giving up
-  RETRY_COUNT:  2,       // retry failed requests this many times
+  TIMEOUT_MS:   40000,   // 40 s: longer than the backend's 30 s AI timeout
+  RETRY_COUNT:  1,       // retry network failures this many times
   RETRY_DELAY:  800,     // ms between retries
 };
 
