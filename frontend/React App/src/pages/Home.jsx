@@ -33,7 +33,7 @@ import { IoSend }  from "react-icons/io5";
 
 export default function Home() {
   const navigate                  = useNavigate();
-  const { userName, setMessages } = useApp();
+  const { userName, setMessages, voiceEnabled } = useApp();
 
   /* Local state */
   const [orbState,      setOrbState]      = useState(ORB_STATE.IDLE);
@@ -156,12 +156,14 @@ export default function Home() {
           />
 
           {/* Voice button */}
-          <VoiceButton
-            onTranscript={handleVoiceTranscript}
-            onStateChange={isListening =>
-              setOrbState(isListening ? ORB_STATE.LISTENING : ORB_STATE.IDLE)
-            }
-          />
+          {voiceEnabled && (
+            <VoiceButton
+              onTranscript={handleVoiceTranscript}
+              onStateChange={isListening =>
+                setOrbState(isListening ? ORB_STATE.LISTENING : ORB_STATE.IDLE)
+              }
+            />
+          )}
 
           {/* Send button — only visible when text entered */}
           {inputText.trim().length > 0 && (
