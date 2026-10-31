@@ -95,7 +95,7 @@ export default function SuggestionCards() {
   function handleSelect(suggestion) {
     /* Seed the chat with a user message containing the prompt */
     const seedMsg = createMessage("user", suggestion.prompt);
-    setMessages([seedMsg]);
+    setMessages(prev => [...prev, { ...seedMsg, _pending: true }]);
     navigate(ROUTES.CHAT);
   }
 
