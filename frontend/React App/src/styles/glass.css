@@ -303,8 +303,9 @@
   color:            var(--color-text-primary);
   padding:          10px 15px;
   max-width:        78%;
-  font-size:        0.92rem;
+  font-size:        var(--bubble-font, 0.92rem);
   line-height:      1.55;
+  white-space:      pre-wrap;      /* keep line breaks in replies */
   animation:        bubbleAI 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -317,8 +318,9 @@
   color:        #fff;
   padding:      10px 15px;
   max-width:    78%;
-  font-size:    0.92rem;
+  font-size:    var(--bubble-font, 0.92rem);
   line-height:  1.55;
+  white-space:      pre-wrap;      /* keep line breaks in replies */
   animation:    bubbleUser 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
